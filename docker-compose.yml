@@ -1,0 +1,16 @@
+services:
+  weblab-f11:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: weblab-f11
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Bangkok
+      - PORT=3000
+    volumes:
+      - ./data:/app/data
