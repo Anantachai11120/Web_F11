@@ -4,4 +4,5 @@ npm-debug.log*
 .next/
 .next-runtime/
 data/next-work/.next/
+data/next-work/
 server-run.log

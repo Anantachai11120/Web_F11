@@ -12,6 +12,22 @@ const dataDir = path.join(__dirname, 'data');
 const approvalsPath = path.join(dataDir, 'booking-approvals.json');
 const equipmentReturnsPath = path.join(dataDir, 'equipment-returns.json');
 const nextWorkDir = path.join(dataDir, 'next-work');
+const traceFallbackDir = path.join(nextWorkDir, 'runtime-trace');
+
+const nativeCreateWriteStream = fs.createWriteStream.bind(fs);
+fs.createWriteStream = (targetPath, ...args) => {
+  try {
+    const resolved = path.resolve(String(targetPath || ''));
+    if (/[\\\/]\.next[\\\/]trace$/i.test(resolved)) {
+      if (!fs.existsSync(traceFallbackDir)) fs.mkdirSync(traceFallbackDir, { recursive: true });
+      const fallbackPath = path.join(traceFallbackDir, 'trace');
+      return nativeCreateWriteStream(fallbackPath, ...args);
+    }
+  } catch {
+    // fallback to native stream
+  }
+  return nativeCreateWriteStream(targetPath, ...args);
+};
 
 app.use(express.json({ limit: '10mb' }));
 

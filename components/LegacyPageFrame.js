@@ -14,6 +14,9 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
           href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap"
           rel="stylesheet"
         />
+        <link rel="icon" type="image/png" href="/image/IconLab.png" />
+        <link rel="shortcut icon" type="image/png" href="/image/IconLab.png" />
+        <link rel="apple-touch-icon" href="/image/IconLab.png" />
         <link rel="stylesheet" href="/assets/style.css" />
       </Head>
       <div dangerouslySetInnerHTML={{ __html: bodyHtml || "" }} />
