@@ -1,0 +1,92 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabFlow | โปรไฟล์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container topbar">
+      <a class="brand-link" href="index.html" aria-label="LMDIFY F11 - หน้าหลัก">
+        <img class="brand-logo" src="image/IconLab.png" alt="LMDIFY F11 icon" onerror="this.style.display='none'" />
+        <span class="brand" data-i18n="brandName">แลปชั้นใต้ดิน F11</span>
+      </a>
+      <nav class="nav">
+        <label class="lang-inline"><select id="languageSelect" class="lang-select"><option value="en" data-i18n="langEN">English</option><option value="th" data-i18n="langTH">ไทย</option></select></label>
+        <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
+        <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
+        <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
+        <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="grid grid-2">
+        <article class="card">
+          <h2>ข้อมูลสมาชิก</h2>
+          <div class="profile-head">
+            <img id="profileImage" src="image/IconLab.png" alt="profile" />
+            <div>
+              <p class="profile-name" id="profileName">-</p>
+              <p class="muted" id="profileUsername">-</p>
+            </div>
+          </div>
+          <div class="profile-meta" id="profileMeta"></div>
+        </article>
+
+        <article class="card profile-booking-summary">
+          <h2>สรุปการจอง</h2>
+          <div class="grid grid-2">
+            <div>
+              <p class="muted" data-i18n="navRooms">จองห้อง</p>
+              <p class="kpi" id="profileRoomCount">0</p>
+            </div>
+            <div>
+              <p class="muted" data-i18n="navEquipment">จองอุปกรณ์</p>
+              <p class="kpi" id="profileEquipmentCount">0</p>
+            </div>
+            <div>
+              <p class="muted" data-i18n="profileTodayRoomCount">วันนี้จองห้อง</p>
+              <p class="kpi" id="profileTodayRoomCountValue">0</p>
+            </div>
+            <div>
+              <p class="muted" data-i18n="profileWeekRoomCount">สัปดาห์นี้จองห้อง</p>
+              <p class="kpi" id="profileWeekRoomCountValue">0</p>
+            </div>
+            <div>
+              <p class="muted" data-i18n="profileWeekQuotaLeft">โควต้าสัปดาห์นี้คงเหลือ</p>
+              <p class="kpi" id="profileWeekQuotaLeftValue">3</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid grid-2" style="margin-top: 1rem;">
+        <article class="card">
+          <h2>รายการจองห้อง</h2>
+          <div id="profileRoomList"></div>
+        </article>
+
+        <article class="card">
+          <h2>รายการจองอุปกรณ์</h2>
+          <div id="profileEquipmentList"></div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>
+
+

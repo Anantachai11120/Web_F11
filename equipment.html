@@ -1,0 +1,199 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabFlow | จองอุปกรณ์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container topbar">
+      <a class="brand-link" href="index.html" aria-label="LMDIFY F11 - หน้าหลัก">
+        <img class="brand-logo" src="image/IconLab.png" alt="LMDIFY F11 icon" onerror="this.style.display='none'" />
+        <span class="brand" data-i18n="brandName">แลปชั้นใต้ดิน F11</span>
+      </a>
+      <nav class="nav">
+        <label class="lang-inline"><select id="languageSelect" class="lang-select"><option value="en" data-i18n="langEN">English</option><option value="th" data-i18n="langTH">ไทย</option></select></label>
+        <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
+        <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
+        <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
+        <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="hero">
+        <h1 data-i18n="equipmentHeroTitle">จองอุปกรณ์ห้องปฏิบัติการ</h1>
+        <div class="booking-process-grid">
+          <div class="booking-step">
+            <span class="step-badge">1</span>
+            <h3 data-i18n="equipmentStep1Title">เลือกวันและเวลา</h3>
+            <p data-i18n="equipmentStep1Desc">ต้องตรงกับรายการจองห้องที่อนุมัติแล้ว</p>
+          </div>
+          <div class="booking-step">
+            <span class="step-badge">2</span>
+            <h3 data-i18n="equipmentStep2Title">เลือกอุปกรณ์</h3>
+            <p data-i18n="equipmentStep2Desc">เลือกชนิดและจำนวนที่ต้องการใช้งาน</p>
+          </div>
+          <div class="booking-step">
+            <span class="step-badge">3</span>
+            <h3 data-i18n="equipmentStep3Title">แจ้งคืนอุปกรณ์</h3>
+            <p data-i18n="equipmentStep3Desc">ใช้งานเสร็จแล้วกดคืน เพื่อให้ผู้ดูแลยืนยัน</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="equipmentMainGrid" class="grid grid-2">
+        <article id="equipmentBookingCard" class="card">
+          <h2 data-i18n="equipmentBookingFormTitle">แบบฟอร์มจองอุปกรณ์</h2>
+          <form id="equipmentBookingForm">
+            <label for="eqName" data-i18n="equipmentBookerLabel">ชื่อผู้จอง</label>
+            <input id="eqName" type="text" data-i18n-placeholder="equipmentBookerPlaceholder" placeholder="เช่น Napat P." readonly />
+
+            <label for="eqDate" data-i18n="equipmentDateLabel">วันที่ต้องการใช้อุปกรณ์</label>
+            <select id="eqDate" disabled>
+              <option value="" data-i18n="equipmentSelectDateFromRoom">เลือกวันที่จากการจองห้อง</option>
+            </select>
+
+            <label for="eqTime" data-i18n="equipmentTimeLabel">เวลาที่ต้องการใช้อุปกรณ์</label>
+            <select id="eqTime" disabled>
+              <option value="" data-i18n="selectTime">เลือกเวลา</option>
+            </select>
+
+            <label data-i18n="equipmentSelectedLabel">อุปกรณ์ที่เลือก</label>
+            <input id="eqSelectedItemLabel" type="text" value="ยังไม่ได้เลือกอุปกรณ์" data-i18n-value="equipmentSelectDefault" readonly />
+            <input id="eqItemsJson" type="hidden" />
+            <div class="inline-actions">
+              <button type="button" id="eqAddToSelectionBtn" class="btn-small" disabled data-i18n="equipmentAddItemBtn">เพิ่มอุปกรณ์ที่เลือก</button>
+              <button type="button" id="eqClearSelectionBtn" class="btn-small danger" disabled data-i18n="equipmentClearSelectionBtn">ล้างรายการ</button>
+            </div>
+            <div id="eqSelectedItemsList" class="selected-equipment-list"></div>
+
+            <label data-i18n="responsibleStaffLabel">บุคลากรผู้รับผิดชอบ</label>
+            <input id="eqSelectedResponsibleId" type="hidden" />
+            <div id="eqResponsibleOptions" class="responsible-grid"></div>
+
+            <label for="eqDetail" data-i18n="detailMoreLabel">รายละเอียดเพิ่มเติม</label>
+            <textarea id="eqDetail" data-i18n-placeholder="equipmentDetailPlaceholder" placeholder="เช่น ใช้ในโปรเจกต์วิชา..." disabled></textarea>
+
+            <p id="eqRoomRuleHint" class="muted" data-i18n="equipmentRuleHint">กรุณาเลือกวันที่ก่อน ระบบจะแสดงช่วงเวลาที่คุณมีการจองห้องอนุมัติแล้ว แล้วเลือกอุปกรณ์จากรายการด้านขวา</p>
+            <button type="submit" data-i18n="saveEquipmentBookingBtn">บันทึกการจองอุปกรณ์</button>
+            <p id="equipmentAuthHint" class="muted"></p>
+            <div id="equipmentNotice" class="notice" hidden></div>
+          </form>
+        </article>
+
+        <article class="card equipment-status-card">
+          <h2 data-i18n="equipmentListTitle">รายการอุปกรณ์</h2>
+          <p class="muted equipment-status-subtitle" data-i18n="equipmentListHint">เลือกตัวกรองรายการและชนิดอุปกรณ์จากบล็อกเดียวกัน</p>
+          <div class="equipment-filter-grid">
+            <div class="equipment-filter-item">
+              <label for="eqListFilter" data-i18n="equipmentListFilterLabel">ตัวกรองรายการ</label>
+          <select id="eqListFilter">
+            <option value="all" data-i18n="equipmentFilterAll">อุปกรณ์ทั้งหมด</option>
+            <option value="available" data-i18n="equipmentFilterAvailable">อุปกรณ์ที่พร้อมใช้งาน</option>
+            <option value="booked" data-i18n="equipmentFilterBooked">อุปกรณ์ที่จอง</option>
+          </select>
+            </div>
+            <div class="equipment-filter-item">
+              <label for="eqTypeFilter" data-i18n="equipmentTypeFilterLabel">ชนิดอุปกรณ์</label>
+              <select id="eqTypeFilter"></select>
+            </div>
+          </div>
+          <p class="muted" data-i18n="equipmentCardHint">คลิกการ์ดอุปกรณ์เพื่อเลือกจอง หรือเลือกจากรายการที่จองเพื่อคืน</p>
+          <div id="eqCatalogGrid" class="equipment-grid"></div>
+          <div class="equipment-return-actions">
+            <button type="button" id="eqReturnAllBtn" class="btn-small danger" data-i18n="returnAllEquipmentBtn">คืนอุปกรณ์ทั้งหมด</button>
+          </div>
+          <p id="eqListHint" class="muted"></p>
+        </article>
+      </section>
+
+      <section id="equipmentAdminTools" class="card" style="margin-top:1rem" hidden>
+        <div class="lab-admin-head">
+          <h2 data-i18n="equipmentAdminSectionTitle">จัดการรายการอุปกรณ์ (แอดมิน)</h2>
+          <button type="button" id="toggleEquipmentAdminBtn" class="btn-small" data-i18n="toggleShowEdit">แสดงฟอร์มแก้ไข</button>
+        </div>
+        <div id="equipmentAdminBody" hidden>
+        <form id="equipmentAdminForm">
+          <label for="eqAdminName" data-i18n="equipmentNameLabel">ชื่ออุปกรณ์</label>
+          <input id="eqAdminName" type="text" data-i18n-placeholder="equipmentNamePlaceholder" placeholder="เช่น กล้องจุลทรรศน์" />
+          <label for="eqAdminType" data-i18n="equipmentTypeLabel">ชนิดอุปกรณ์</label>
+          <select id="eqAdminType"></select>
+          <label for="eqAdminNewType" data-i18n="addEquipmentTypeLabel">เพิ่มชนิดอุปกรณ์ใหม่</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="eqAdminNewType" type="text" data-i18n-placeholder="equipmentTypePlaceholder" placeholder="เช่น งานไม้" />
+            <button id="eqAddTypeBtn" type="button" class="btn-small" data-i18n="addTypeBtn">เพิ่มชนิด</button>
+          </div>
+          <label for="eqAdminStock" data-i18n="totalStockLabel">จำนวนทั้งหมด</label>
+          <input id="eqAdminStock" type="number" min="1" value="1" />
+
+          <label for="eqAdminImage" data-i18n="equipmentImageLabel">รูปอุปกรณ์</label>
+          <input id="eqAdminImage" type="file" accept="image/*" />
+          <div class="crop-wrap">
+            <canvas id="eqCropCanvas" width="360" height="220"></canvas>
+            <div class="crop-controls">
+              <label for="eqCropZoom" data-i18n="adminCropZoomLabel">ซูมภาพ</label>
+              <input id="eqCropZoom" type="range" min="1" max="3" step="0.01" value="1" />
+              <label for="eqCropX" data-i18n="adminCropXLabel">เลื่อนแนวนอน</label>
+              <input id="eqCropX" type="range" min="-220" max="220" step="1" value="0" />
+              <label for="eqCropY" data-i18n="adminCropYLabel">เลื่อนแนวตั้ง</label>
+              <input id="eqCropY" type="range" min="-220" max="220" step="1" value="0" />
+              <button id="eqApplyCropBtn" type="button" class="btn-small" data-i18n="adminCropApplyBtn">ครอปรูป</button>
+            </div>
+          </div>
+          <p id="eqCropStatus" class="muted" data-i18n="cropEmpty">ยังไม่ได้เลือกรูป</p>
+
+          <button type="submit" data-i18n="saveEquipmentItemBtn">บันทึกรายการอุปกรณ์</button>
+          <div id="equipmentAdminNotice" class="notice" hidden></div>
+        </form>
+        <h3 style="margin-top:1rem;" data-i18n="equipmentListTitle">รายการอุปกรณ์</h3>
+        <div id="equipmentAdminList"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+
+  <div id="equipmentRulesModal" class="rules-modal-backdrop" hidden>
+    <div class="rules-modal">
+      <h3 data-i18n="equipmentRulesModalTitle">กฎการจองอุปกรณ์ (โปรดอ่านก่อนทำรายการ)</h3>
+      <ul class="list">
+        <li data-i18n="equipmentRulesItem1">ผู้จองต้องเข้าสู่ระบบก่อนทุกครั้ง และต้องมีการจองห้องที่ได้รับอนุมัติแล้วในวันและเวลาเดียวกัน</li>
+        <li data-i18n="equipmentRulesItem2">สามารถเลือกจองได้เฉพาะอุปกรณ์ที่มีจำนวนคงเหลือเพียงพอในช่วงเวลาที่เลือก</li>
+        <li data-i18n="equipmentRulesItem3">ผู้จองต้องระบุผู้รับผิดชอบก่อนยืนยันการจอง เพื่อใช้ในการติดตามการใช้งานและการคืนอุปกรณ์</li>
+        <li data-i18n="equipmentRulesItem4">เมื่อใช้งานเสร็จ ต้องกดแจ้งคืนอุปกรณ์ในระบบ และรอผู้ดูแลยืนยันการรับคืนผ่านอีเมล</li>
+        <li data-i18n="equipmentRulesItem5">หากอุปกรณ์ชำรุดหรือสูญหาย ต้องแจ้งผู้ดูแลทันที และปฏิบัติตามระเบียบของห้องปฏิบัติการ</li>
+      </ul>
+      <button id="equipmentRulesAcceptBtn" type="button" data-i18n="acceptBtn">ยอมรับ</button>
+    </div>
+  </div>
+
+  <div id="equipmentReturnModal" class="rules-modal-backdrop" hidden>
+    <div class="rules-modal">
+      <h3 data-i18n="equipmentReturnModalTitle">แนบหลักฐานการคืนอุปกรณ์</h3>
+      <p class="muted" data-i18n="equipmentReturnModalHint">อัปโหลดรูปหลักฐานก่อน แล้วกดปุ่มคืนอุปกรณ์เพื่อส่งอีเมลถึงผู้ดูแล</p>
+      <input id="equipmentReturnProofInput" type="file" accept="image/*" capture="environment" />
+      <div id="equipmentReturnProofPreviewWrap" hidden style="margin-top:0.7rem;">
+        <img id="equipmentReturnProofPreview" alt="return-proof-preview" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--line);" />
+      </div>
+      <div class="inline-actions" style="margin-top:0.8rem;">
+        <button id="equipmentReturnConfirmBtn" type="button" data-i18n="equipmentReturnSubmitBtn">คืนอุปกรณ์</button>
+        <button id="equipmentReturnCancelBtn" type="button" class="btn-small danger" data-i18n="adminQuotaCancelBtn">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
+

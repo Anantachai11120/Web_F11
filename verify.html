@@ -1,0 +1,61 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabFlow | ยืนยันบัญชี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container topbar">
+      <a class="brand-link" href="index.html" aria-label="LMDIFY F11 - หน้าหลัก">
+        <img class="brand-logo" src="image/IconLab.png" alt="LMDIFY F11 icon" onerror="this.style.display='none'" />
+        <span class="brand" data-i18n="brandName">แลปชั้นใต้ดิน F11</span>
+      </a>
+      <nav class="nav">
+        <label class="lang-inline"><select id="languageSelect" class="lang-select"><option value="en" data-i18n="langEN">English</option><option value="th" data-i18n="langTH">ไทย</option></select></label>
+        <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
+        <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
+        <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
+        <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="hero">
+        <h1>ยืนยันบัญชีสมาชิก</h1>
+        <p>กรอกอีเมลและรหัสยืนยันที่ได้จากหน้าสมัครสมาชิก</p>
+      </section>
+
+      <section class="grid grid-2">
+        <article class="card">
+          <h2>ฟอร์มยืนยัน</h2>
+          <form id="verifyForm">
+            <label for="verifyEmail">อีเมล</label>
+            <input id="verifyEmail" type="email" placeholder="name@univ.ac.th" />
+
+            <label for="verifyCode">รหัสยืนยัน</label>
+            <input id="verifyCode" type="text" placeholder="เช่น 123456" />
+
+            <button type="submit">ยืนยันบัญชี</button>
+            <div id="verifyNotice" class="notice" hidden></div>
+          </form>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+  <script src="assets/app.js"></script>
+</body>
+</html>
+
+

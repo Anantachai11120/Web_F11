@@ -1,0 +1,186 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabFlow | แอดมิน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container topbar">
+      <a class="brand-link" href="index.html" aria-label="LMDIFY F11 - หน้าหลัก">
+        <img class="brand-logo" src="image/IconLab.png" alt="LMDIFY F11 icon" onerror="this.style.display='none'" />
+        <span class="brand" data-i18n="brandName">แลปชั้นใต้ดิน F11</span>
+      </a>
+      <nav class="nav">
+        <label class="lang-inline"><select id="languageSelect" class="lang-select"><option value="en" data-i18n="langEN">English</option><option value="th" data-i18n="langTH">ไทย</option></select></label>
+        <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
+        <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
+        <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
+        <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section id="adminGate" class="card" hidden>
+        <h2 data-i18n="adminGateTitle">ไม่สามารถเข้าถึงหน้านี้</h2>
+        <p class="muted" data-i18n="accessDenied">ต้องเข้าสู่ระบบด้วยสิทธิ์แอดมินก่อน</p>
+      </section>
+
+      <section id="adminPanel" class="admin-stack">
+        <article class="card admin-section-nav">
+          <h2 data-i18n="adminSectionMenuTitle">เมนูจัดการแอดมิน</h2>
+          <div class="admin-tabbar">
+            <button type="button" class="admin-tab-btn active" data-admin-tab="announcement" data-i18n="adminTabAnnouncement">เพิ่มประกาศ / ข่าวสาร</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="roomApproval" data-i18n="adminTabRoomApproval">อนุมัติการจองห้อง</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="adminRole" data-i18n="adminTabAdminRole">จัดการสิทธิ์แอดมิน</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="responsibleStaff" data-i18n="adminTabResponsible">จัดการบุคลากรผู้รับผิดชอบแลป</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="equipmentSummary" data-i18n="adminTabEquipmentSummary">สรุปการยืมอุปกรณ์</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="emailNotify" data-i18n="adminTabEmailNotify">แจ้งเตือนทางอีเมล</button>
+          </div>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="announcement">
+          <h2 data-i18n="adminTabAnnouncement">เพิ่มประกาศ / ข่าวสาร</h2>
+          <form id="announcementForm">
+            <label for="announceType" data-i18n="adminAnnounceTypeLabel">ประเภท</label>
+            <select id="announceType">
+              <option value="" data-i18n="adminAnnounceTypeSelect">เลือกประเภท</option>
+              <option data-i18n="announcementTypeAnnouncement">ประกาศ</option>
+              <option data-i18n="announcementTypeNews">ข่าวสาร</option>
+            </select>
+
+            <label for="announceTitle" data-i18n="adminAnnounceTitleLabel">หัวข้อ</label>
+            <input id="announceTitle" type="text" data-i18n-placeholder="adminAnnounceTitlePlaceholder" placeholder="เช่น ปิดปรับปรุงห้อง Lab-B204" />
+
+            <label for="announceImage" data-i18n="adminAnnounceImageLabel">รูปภาพโพสต์</label>
+            <input id="announceImage" type="file" accept="image/*" />
+            <div class="crop-wrap">
+              <canvas id="cropCanvas" width="360" height="220"></canvas>
+              <div class="crop-controls">
+                <label for="cropZoom" data-i18n="adminCropZoomLabel">ซูมภาพ</label>
+                <input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1" />
+                <label for="cropX" data-i18n="adminCropXLabel">เลื่อนแนวนอน</label>
+                <input id="cropX" type="range" min="-220" max="220" step="1" value="0" />
+                <label for="cropY" data-i18n="adminCropYLabel">เลื่อนแนวตั้ง</label>
+                <input id="cropY" type="range" min="-220" max="220" step="1" value="0" />
+                <button id="applyCropBtn" type="button" class="btn-small" data-i18n="adminCropApplyBtn">ครอปรูป</button>
+              </div>
+            </div>
+            <p id="cropStatus" class="muted" data-i18n="cropEmpty">ยังไม่ได้เลือกรูป</p>
+
+            <label for="announceContent" data-i18n="adminAnnounceContentLabel">รายละเอียด</label>
+            <textarea id="announceContent" data-i18n-placeholder="adminAnnounceContentPlaceholder" placeholder="รายละเอียดประกาศหรือข่าว"></textarea>
+
+            <button type="submit" data-i18n="adminSaveAnnouncementBtn">บันทึกประกาศ</button>
+            <div id="adminNotice" class="notice" hidden></div>
+          </form>
+
+          <h3 style="margin-top: 1rem;" data-i18n="adminAnnouncementListTitle">รายการประกาศ</h3>
+          <div id="adminAnnouncementList"></div>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="roomApproval" hidden>
+          <h2 data-i18n="adminTabRoomApproval">อนุมัติการจองห้อง</h2>
+          <div id="roomApproveList"></div>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="adminRole" hidden>
+          <h2 data-i18n="adminTabAdminRole">จัดการสิทธิ์แอดมิน</h2>
+          <p class="muted" data-i18n="adminRoleHint">กดปุ่มเพื่อแต่งตั้งผู้ใช้งานเป็นแอดมินเพิ่ม</p>
+          <div id="adminUserList"></div>
+          <div id="adminUserProfilePanel" class="admin-user-profile-panel" hidden>
+            <h3 id="adminUserProfileTitle" data-i18n="adminProfileTitle">โปรไฟล์ผู้ใช้งาน</h3>
+            <div id="adminUserProfileView"></div>
+          </div>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="responsibleStaff" hidden>
+          <h2 data-i18n="adminTabResponsible">จัดการบุคลากรผู้รับผิดชอบแลป</h2>
+          <form id="responsibleForm">
+            <label for="responsibleName" data-i18n="adminResponsibleNameLabel">ชื่อบุคลากร</label>
+            <input id="responsibleName" type="text" data-i18n-placeholder="adminResponsibleNamePlaceholder" placeholder="เช่น อ.สุชาติ ใจดี" />
+
+            <label for="responsibleEmail" data-i18n="adminResponsibleEmailLabel">อีเมล</label>
+            <input id="responsibleEmail" type="email" placeholder="name@univ.ac.th" />
+
+            <label for="responsibleImageUrl" data-i18n="adminResponsibleImageUrlLabel">รูปภาพ (URL)</label>
+            <input id="responsibleImageUrl" type="url" placeholder="https://..." />
+
+            <label for="responsibleImageFile" data-i18n="adminResponsibleImageFileLabel">หรืออัปโหลดรูปจากคอม</label>
+            <input id="responsibleImageFile" type="file" accept="image/*" />
+
+            <button type="submit" data-i18n="adminResponsibleAddBtn">เพิ่มบุคลากร</button>
+            <div id="responsibleNotice" class="notice" hidden></div>
+          </form>
+
+          <h3 style="margin-top: 1rem;" data-i18n="adminResponsibleListTitle">รายการบุคลากร</h3>
+          <div id="responsibleList"></div>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="equipmentSummary" hidden>
+          <h2 data-i18n="adminBorrowSummaryTitle">สรุปการยืมอุปกรณ์</h2>
+          <p class="muted" data-i18n="adminBorrowSummaryHint">แสดงรายการอุปกรณ์ที่ถูกยืม และผู้ใช้ที่ยังไม่คืน</p>
+          <div id="adminEquipmentSummary"></div>
+          <div id="adminEquipmentNotice" class="notice" hidden></div>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="emailNotify" hidden>
+          <h2 data-i18n="adminBroadcastTitle">แจ้งเตือนทางอีเมล</h2>
+          <p class="muted" data-i18n="adminBroadcastHint">เลือกกลุ่มผู้รับหรือเลือกเป็นรายคน แล้วส่งข้อความแจ้งเตือน</p>
+          <form id="adminBroadcastForm">
+            <label for="broadcastGroup" data-i18n="adminBroadcastGroup">กลุ่มผู้รับ</label>
+            <select id="broadcastGroup">
+              <option value="all" data-i18n="adminBroadcastAll">ทั้งหมด</option>
+              <option value="users" data-i18n="adminBroadcastUsers">ผู้ใช้</option>
+              <option value="staff" data-i18n="adminBroadcastStaff">เจ้าหน้าที่ผู้ดูแล</option>
+            </select>
+
+            <label data-i18n="adminBroadcastRecipients">รายชื่ออีเมลผู้รับ</label>
+            <div id="broadcastRecipientList" class="admin-user-profile-list"></div>
+
+            <label for="broadcastSubject" data-i18n="adminBroadcastSubject">หัวข้ออีเมล</label>
+            <input id="broadcastSubject" type="text" data-i18n-placeholder="adminBroadcastSubjectPlaceholder" placeholder="เช่น แจ้งเตือนการใช้งานระบบแลป" />
+
+            <label for="broadcastMessage" data-i18n="adminBroadcastMessage">ข้อความ</label>
+            <textarea id="broadcastMessage" data-i18n-placeholder="adminBroadcastMessagePlaceholder" placeholder="พิมพ์ข้อความแจ้งเตือนที่ต้องการส่ง"></textarea>
+
+            <button type="submit" data-i18n="adminBroadcastSend">ส่งอีเมลแจ้งเตือน</button>
+            <div id="adminBroadcastNotice" class="notice" hidden></div>
+          </form>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+
+  <div id="adminQuotaModal" class="admin-quota-backdrop" hidden>
+    <div class="admin-quota-modal">
+      <h3 id="adminQuotaModalTitle" data-i18n="adminQuotaModalTitle">เพิ่มโควต้าการจองห้อง</h3>
+      <p id="adminQuotaTargetName" class="admin-quota-target">-</p>
+      <p id="adminQuotaCurrentText" class="muted">-</p>
+      <form id="adminQuotaForm">
+        <label for="adminQuotaAmountInput" data-i18n="adminQuotaAmountLabel">จำนวนโควต้าที่ต้องการเพิ่ม (รายสัปดาห์)</label>
+        <input id="adminQuotaAmountInput" type="number" min="1" step="1" value="1" />
+        <div class="admin-quota-actions">
+          <button id="adminQuotaCancelBtn" type="button" class="btn-small danger" data-i18n="adminQuotaCancelBtn">ยกเลิก</button>
+          <button id="adminQuotaSaveBtn" type="submit" class="btn-small" data-i18n="adminQuotaSaveBtn">บันทึกโควต้า</button>
+        </div>
+        <div id="adminQuotaNotice" class="notice" hidden></div>
+      </form>
+    </div>
+  </div>
+  <script src="assets/app.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,154 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabFlow | จองห้อง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container topbar">
+      <a class="brand-link" href="index.html" aria-label="LMDIFY F11 - หน้าหลัก">
+        <img class="brand-logo" src="image/IconLab.png" alt="LMDIFY F11 icon" onerror="this.style.display='none'" />
+        <span class="brand" data-i18n="brandName">แลปชั้นใต้ดิน F11</span>
+      </a>
+      <nav class="nav">
+        <label class="lang-inline"><select id="languageSelect" class="lang-select"><option value="en" data-i18n="langEN">English</option><option value="th" data-i18n="langTH">ไทย</option></select></label>
+        <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
+        <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
+        <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
+        <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="hero">
+        <h1 data-i18n="roomRulesHeroTitle">กฎการใช้งานห้องปฏิบัติการ Lab-F11</h1>
+        <div class="booking-process-grid">
+          <div class="booking-step">
+            <span class="step-badge">1</span>
+            <h3 data-i18n="roomRulesStep1Title">จำนวนผู้ใช้งาน</h3>
+            <p data-i18n="roomRulesStep1Desc">จำกัดสูงสุด 20 คนต่อรอบเวลา</p>
+          </div>
+          <div class="booking-step">
+            <span class="step-badge">2</span>
+            <h3 data-i18n="roomRulesStep2Title">เลือกผู้รับผิดชอบ</h3>
+            <p data-i18n="roomRulesStep2Desc">ต้องเลือกบุคลากรผู้รับผิดชอบก่อนส่งคำขอ</p>
+          </div>
+          <div class="booking-step">
+            <span class="step-badge">3</span>
+            <h3 data-i18n="roomRulesStep3Title">รอยืนยัน</h3>
+            <p data-i18n="roomRulesStep3Desc">ระบบจะส่งอีเมลแจ้งเตือนเพื่อยืนยันการจอง</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="roomMainGrid" class="grid grid-2">
+        <article id="roomBookingCard" class="card">
+          <h2 data-i18n="roomRequesterSectionTitle">ข้อมูลผู้ขอใช้งาน</h2>
+          <form id="roomBookingForm">
+            <input id="roomFixed" type="hidden" value="Lab-F11" />
+
+            <label for="roomRequesterName">ชื่อ-นามสกุล ผู้ขออนุญาต</label>
+            <input id="roomRequesterName" type="text" placeholder="เช่น Anantachai S." />
+
+            <label for="roomMember1">ชื่อ-นามสกุล สมาชิกลำดับที่ 1 (ไม่บังคับ)</label>
+            <input id="roomMember1" type="text" placeholder="ถ้ามี" />
+
+            <label for="roomMember2">ชื่อ-นามสกุล สมาชิกลำดับที่ 2 (ไม่บังคับ)</label>
+            <input id="roomMember2" type="text" placeholder="ถ้ามี" />
+
+            <label>วัตถุประสงค์ในการเข้าใช้ห้องปฏิบัติการ</label>
+            <div class="purpose-group">
+              <label><input type="radio" name="roomPurposeType" value="โปรเจกต์รายวิชา" checked /> โปรเจกต์รายวิชา</label>
+              <label><input type="radio" name="roomPurposeType" value="โปรเจกต์จบ" /> โปรเจกต์จบ</label>
+              <label><input type="radio" name="roomPurposeType" value="อื่นๆ" /> อื่นๆ</label>
+            </div>
+            <input id="roomPurposeOther" type="text" placeholder="กรณีเลือกอื่นๆ โปรดระบุ" />
+
+            <label for="roomDate">วัน เดือน ปี ที่ต้องการเข้าใช้งาน</label>
+            <input id="roomDate" type="date" />
+
+            <label for="roomTime">เวลาที่ต้องการใช้งาน</label>
+            <select id="roomTime">
+              <option value="">เลือกเวลา</option>
+              <option>09:00 - 12:00</option>
+              <option>13:00 - 17:00</option>
+            </select>
+
+            <label>บุคลากรผู้รับผิดชอบ</label>
+            <input id="selectedResponsibleId" type="hidden" />
+            <div id="responsibleOptions" class="responsible-grid"></div>
+
+            <button type="submit">ส่งคำขอจองห้อง</button>
+            <p id="roomAuthHint" class="muted"></p>
+            <div id="roomNotice" class="notice" hidden></div>
+          </form>
+        </article>
+
+        <article class="card room-status-card">
+          <h2 data-i18n="roomStatusSectionTitle">สถานะการจอง</h2>
+          <p class="muted room-status-subtitle" data-i18n="roomStatusSectionHint">เลือกวันและเวลาเพื่อดูจำนวนที่จองแล้ว และจำนวนที่ยังว่าง</p>
+          <div class="room-filter-grid">
+            <div class="room-filter-item">
+              <label for="roomStatusDate">วัน เดือน ปี ที่ต้องการดูสถานะ</label>
+              <input id="roomStatusDate" type="date" />
+            </div>
+            <div class="room-filter-item">
+              <label for="roomStatusTime">เวลาที่ต้องการดูสถานะ</label>
+              <select id="roomStatusTime">
+                <option value="">เลือกเวลา</option>
+                <option>09:00 - 12:00</option>
+                <option>13:00 - 17:00</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="roomDailySummary" class="room-slot-detail muted">สรุปผลรายวันจะแสดงเมื่อเลือกวันที่</div>
+          <div id="roomSlotsGrid" class="room-slots-grid"></div>
+          <div id="roomSlotDetail" class="room-slot-detail muted">โฮเวอร์ไอคอนเพื่อดูชื่อผู้จอง และคลิกเพื่อดูรายละเอียด</div>
+          <div class="room-slot-legend">
+            <span><img src="image/userG.png" alt="empty" /> <span data-i18n="roomLegendAvailable">ว่าง</span></span>
+            <span id="roomLegendMine"><img src="image/userGre.png" alt="self" /> <span data-i18n="roomLegendMine">คุณจอง</span></span>
+            <span><img src="image/userR.png" alt="others" /> <span data-i18n="roomLegendBooked">จอง</span></span>
+          </div>
+        </article>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+
+  <div id="roomRulesModal" class="rules-modal-backdrop" hidden>
+    <div class="rules-modal">
+      <h3 data-i18n="roomRulesModalTitle">กฎการใช้งานห้องปฏิบัติการ Lab-F11</h3>
+      <p class="thin-copy">
+        <strong data-i18n="roomRulesScopeLabel">ขอบเขตพื้นที่ใช้งาน:</strong>
+        <span data-i18n="roomRulesScopeText">จำกัดเฉพาะบริเวณภายนอกประตูทางเข้าไปจนถึงโซนเครื่องมือช่างเท่านั้น
+        ยกเว้นกรณีพิเศษ เช่น การเรียนการสอนที่มีอาจารย์ควบคุม หรือเหตุผลสำคัญอื่น ๆ
+        ซึ่งต้องได้รับอนุญาตเป็นรายกรณี</span>
+      </p>
+      <p class="thin-copy">
+        <strong data-i18n="roomRulesTimeLabel">ช่วงเวลาการใช้งาน:</strong>
+        <span data-i18n="roomRulesTimeText">สามารถเข้าใช้งานได้เฉพาะวันทำการ เวลา 09:00 - 17:00 น.
+        ทั้งนี้การเข้าใช้งานทุกครั้งต้องได้รับการยืนยันจากผู้ดูแลห้องปฏิบัติการก่อน
+        จึงจะถือว่าได้รับอนุญาตอย่างสมบูรณ์</span>
+      </p>
+      <button id="roomRulesAcceptBtn" type="button" data-i18n="acceptBtn">ยอมรับ</button>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
+
+

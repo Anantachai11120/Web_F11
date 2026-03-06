@@ -1,0 +1,214 @@
+﻿<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LabFlow | หน้าหลัก</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container topbar">
+      <a class="brand-link" href="index.html" aria-label="LMDIFY F11 - หน้าหลัก">
+        <img class="brand-logo" src="image/IconLab.png" alt="LMDIFY F11 icon" onerror="this.style.display='none'" />
+        <span class="brand" data-i18n="brandName">แลปชั้นใต้ดิน F11</span>
+      </a>
+      <nav class="nav">
+        <label class="lang-inline"><select id="languageSelect" class="lang-select"><option value="en" data-i18n="langEN">English</option><option value="th" data-i18n="langTH">ไทย</option></select></label>
+        <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
+        <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
+        <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
+        <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="hero">
+        <h1 data-i18n="homeLabTitle">เกี่ยวกับห้องปฏิบัติการ UNDERGROUND LAB F11</h1>
+        <p data-i18n="homeLabDesc">ห้องปฏิบัติการแห่งนี้มุ่งพัฒนางานด้านหุ่นยนต์ รถอัตโนมัติ ระบบการบิน ปัญญาประดิษฐ์ (AI) และการทำ Optimization เพื่อแก้ปัญหาเชิงวิศวกรรมอย่างมีประสิทธิภาพ พร้อมสนับสนุนการเรียนรู้ การวิจัย และการสร้างต้นแบบนวัตกรรมในงานจริง</p>
+      </section>
+
+      <section style="margin-top: 1rem;">
+        <article class="card">
+          <h2>ประกาศ / ข่าวสาร</h2>
+          <div class="announcement-toolbar">
+            <p id="announcementCountLabel" class="muted"></p>
+            <button id="announcementQuickAdd" type="button" class="btn-small" hidden>เพิ่มโพสต์</button>
+            <button id="announcementLoadMore" type="button" class="btn-small" hidden>โหลดเพิ่ม</button>
+          </div>
+          <div id="announcementList" class="announcement-grid">
+            <p class="muted">ยังไม่มีประกาศหรือข่าวสาร</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="summary-bottom" style="margin-top: 1rem;">
+        <article class="card summary-compact">
+          <h2>สรุประบบ</h2>
+          <div class="grid grid-2">
+            <div>
+              <p class="muted">สมาชิกทั้งหมด</p>
+              <div class="kpi" id="totalUsers">0</div>
+            </div>
+            <div>
+              <p class="muted">ยืนยันแล้ว</p>
+              <div class="kpi" id="verifiedUsers">0</div>
+            </div>
+            <div>
+              <p class="muted">จองห้อง</p>
+              <div class="kpi" id="roomCount">0</div>
+            </div>
+            <div>
+              <p class="muted">จองอุปกรณ์</p>
+              <div class="kpi" id="equipmentCount">0</div>
+            </div>
+          </div>
+          <p class="muted"><span data-i18n="pendingLabel">รออนุมัติห้อง</span>: <span id="pendingRoomCount">0</span> <span data-i18n="itemsLabel">รายการ</span></p>
+        </article>
+      </section>
+
+      <section class="lab-bottom" style="margin-top: 1rem;">
+        <div class="lab-bottom-grid">
+          <div>
+            <img class="lab-badge" src="image/IconLab.png" alt="Lab icon" onerror="this.style.display='none'" />
+            <h3 id="labOrgName">ชมรมกีฬา มหาวิทยาลัยเทคโนโลยีสุรนารี</h3>
+          </div>
+          <div>
+            <h4>ที่อยู่</h4>
+            <p id="labAddress">มหาวิทยาลัยเทคโนโลยีสุรนารี 111 ถ.มหาวิทยาลัย ต.สุรนารี อ.เมืองนครราชสีมา 30000</p>
+          </div>
+          <div>
+            <h4>ข้อมูลติดต่อ</h4>
+            <p class="contact-line">
+              <img class="contact-icon" src="image/facebook.png" alt="Facebook" />
+              <span id="labContactFacebook">ชมรมกีฬา มทส.</span>
+            </p>
+            <p class="contact-line">
+              <img class="contact-icon" src="image/instagram.png" alt="Instagram" />
+              <span id="labContactInstagram">SUATHCTGI</span>
+            </p>
+            <p class="contact-line">
+              <img class="contact-icon" src="image/phone-call.png" alt="Phone" />
+              <span id="labContactPhone">08 2571 3564</span>
+            </p>
+          </div>
+          <div>
+            <h4>หน่วยประสานงาน</h4>
+            <ul class="list list-plain" id="labUnits">
+              <li>ชมรมกีฬา มทส.</li>
+              <li>สนามกีฬา</li>
+              <li>สนามสุรพลกีฬาสถาน</li>
+            </ul>
+          </div>
+          <div>
+            <h4>ผู้เยี่ยมชมเว็บไซต์</h4>
+            <p id="labVisitorsTotal">ทั้งหมด : 246 คน</p>
+            <p id="labVisitorsToday">วันนี้ : 17 คน</p>
+          </div>
+        </div>
+
+        <div class="lab-map-wrap">
+          <iframe id="labMap" title="Lab map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+
+        <div id="labManagerSection" class="lab-manager">
+          <h4>ผู้ดูแล</h4>
+          <img id="labManagerImage" src="image/IconLab.png" alt="Manager profile" />
+          <p id="labManagerName">Wave Anantachai</p>
+          <p id="labManagerRole">นักกีฬา มทส.</p>
+        </div>
+
+        <div id="labBottomAdminTools" class="lab-admin-tools" hidden>
+          <div class="lab-admin-head">
+            <button type="button" id="toggleLabEditBtn" class="btn-small">แสดงฟอร์มแก้ไข</button>
+          </div>
+          <form id="labBottomForm" class="lab-admin-form" hidden>
+            <label for="labFormOrgName">ชื่อหน่วยงาน</label>
+            <input id="labFormOrgName" type="text" />
+
+            <label for="labFormAddress">ที่อยู่</label>
+            <textarea id="labFormAddress"></textarea>
+
+            <label for="labFormFacebook">Facebook</label>
+            <input id="labFormFacebook" type="text" />
+
+            <label for="labFormInstagram">Instagram</label>
+            <input id="labFormInstagram" type="text" />
+
+            <label for="labFormPhone">เบอร์โทร</label>
+            <input id="labFormPhone" type="text" />
+
+            <label for="labFormUnits">หน่วยประสานงาน (1 บรรทัดต่อ 1 รายการ)</label>
+            <textarea id="labFormUnits"></textarea>
+
+            <label for="labFormMapUrl">ลิงก์แผนที่ (Google Maps Embed URL)</label>
+            <input id="labFormMapUrl" type="url" />
+
+            <label for="labFormManagerName">ชื่อผู้ดูแล</label>
+            <input id="labFormManagerName" type="text" />
+
+            <label for="labFormManagerRole">ตำแหน่งผู้ดูแล</label>
+            <input id="labFormManagerRole" type="text" />
+
+            <label for="labFormManagerImageFile">อัปโหลดรูปผู้ดูแล (จากคอม)</label>
+            <input id="labFormManagerImageFile" type="file" accept="image/*" />
+            <label class="checkbox-inline">
+              <input id="labFormShowManager" type="checkbox" checked />
+              <span data-i18n="labShowManagerLabel">แสดงบล็อกผู้ดูแล</span>
+            </label>
+
+            <button type="submit">บันทึกข้อมูลส่วนล่าง</button>
+            <div id="labBottomNotice" class="notice" hidden></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+
+  <div id="announcementEditorModal" class="announcement-editor-backdrop" hidden>
+    <div class="announcement-editor-modal">
+      <div class="announcement-editor-head">
+        <h3 id="announcementEditorTitle">แก้ไขประกาศ / ข่าวสาร</h3>
+        <button id="announcementEditorCloseBtn" type="button" class="btn-small danger">ปิด</button>
+      </div>
+      <form id="announcementEditorForm" class="announcement-editor-form">
+        <label for="announcementEditorType" data-i18n="announcementEditorType">ประเภทโพสต์</label>
+        <select id="announcementEditorType"></select>
+
+        <label for="announcementEditorTitleInput" data-i18n="announcementEditorTitleLabel">หัวข้อโพสต์</label>
+        <input id="announcementEditorTitleInput" type="text" />
+
+        <label for="announcementEditorContentInput" data-i18n="announcementEditorContentLabel">เนื้อหาโพสต์</label>
+        <textarea id="announcementEditorContentInput"></textarea>
+
+        <label for="announcementEditorImageUrlInput" data-i18n="announcementEditorImageUrlLabel">ลิงก์รูปภาพ (ไม่บังคับ)</label>
+        <input id="announcementEditorImageUrlInput" type="url" />
+
+        <label for="announcementEditorImageFileInput" data-i18n="announcementEditorImageFileLabel">หรืออัปโหลดรูปจากเครื่อง</label>
+        <input id="announcementEditorImageFileInput" type="file" accept="image/*" />
+
+        <img id="announcementEditorImagePreview" class="announcement-editor-preview" alt="announcement preview" hidden />
+
+        <div class="announcement-editor-actions">
+          <button id="announcementEditorCancelBtn" type="button" class="btn-small danger" data-i18n="announcementEditorCancelBtn">ยกเลิก</button>
+          <button id="announcementEditorSaveBtn" type="submit" class="btn-small" data-i18n="announcementEditorSaveBtn">บันทึกโพสต์</button>
+        </div>
+        <div id="announcementEditorNotice" class="notice" hidden></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
+
+
