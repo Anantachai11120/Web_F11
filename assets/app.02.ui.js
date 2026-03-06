@@ -1174,6 +1174,20 @@ const getAvailableQtyByItemId = (itemId) => {
   return Math.max(item.stock - getBorrowedQtyByItemId(itemId), 0);
 };
 
+const buildEquipmentBorrowStats = (items, bookings) => {
+  const byId = new Map();
+  const idByName = new Map(items.map((it) => [String(it.name || ""), String(it.id || "")]));
+  bookings.forEach((b) => {
+    if ((b.returnStatus || "borrowed") === "returned") return;
+    const bookingItemId = String(b.itemId || "");
+    const resolvedId = bookingItemId || idByName.get(String(b.item || "")) || "";
+    if (!resolvedId) return;
+    const qty = Math.max(1, Number(b.quantity || 1));
+    byId.set(resolvedId, (byId.get(resolvedId) || 0) + qty);
+  });
+  return byId;
+};
+
 const getMyActiveEquipmentBookings = (user) =>
   load(storageKeys.equipmentBookings, [])
     .filter((b) => isBookingOwnedByUser(b, user))
@@ -1222,6 +1236,8 @@ const renderEquipmentCatalog = () => {
   let mode = filter.value || "all";
   const selectedType = typeFilter?.value || "all";
   const items = normalizeEquipmentItems();
+  const allBookings = load(storageKeys.equipmentBookings, []);
+  const borrowedById = buildEquipmentBorrowStats(items, allBookings);
   const canBook = Boolean(byId("eqTime")?.value);
 
   if (mode === "all" || mode === "available") {
@@ -1229,10 +1245,15 @@ const renderEquipmentCatalog = () => {
     if (returnAllBtn) returnAllBtn.hidden = true;
     grid.innerHTML = items
       .filter((item) => selectedType === "all" || (item.type || "ทั่วไป") === selectedType)
-      .filter((item) => (mode === "available" ? getAvailableQtyByItemId(item.id) > 0 : true))
+      .filter((item) => {
+        if (mode !== "available") return true;
+        const borrowed = borrowedById.get(item.id) || 0;
+        const available = Math.max(Number(item.stock || 0) - borrowed, 0);
+        return available > 0;
+      })
       .map((item) => {
-        const available = getAvailableQtyByItemId(item.id);
-        const borrowed = getBorrowedQtyByItemId(item.id);
+        const borrowed = borrowedById.get(item.id) || 0;
+        const available = Math.max(Number(item.stock || 0) - borrowed, 0);
         const exhausted = available <= 0;
         const active =
           selectedEquipmentItemId === item.id ||
