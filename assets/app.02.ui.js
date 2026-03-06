@@ -966,6 +966,7 @@ const updateBookingAuthUI = () => {
   const eqCard = byId("equipmentBookingCard");
   const eqMainGrid = byId("equipmentMainGrid");
   const eqReturnAllBtn = byId("eqReturnAllBtn");
+  const eqFilter = byId("eqListFilter");
   const roomHint = byId("roomAuthHint");
   const eqHint = byId("equipmentAuthHint");
 
