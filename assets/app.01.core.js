@@ -72,6 +72,77 @@ const defaultEquipmentItems = [
 
 const defaultEquipmentTypes = ["งานวิทยาศาสตร์", "งานไฟฟ้า", "งานไม้", "งานเครื่องกล"];
 
+const sharedStorageKeys = new Set([
+  storageKeys.users,
+  storageKeys.roomBookings,
+  storageKeys.equipmentBookings,
+  storageKeys.equipmentItems,
+  storageKeys.equipmentTypes,
+  storageKeys.announcements,
+  storageKeys.homeInfo,
+  storageKeys.responsibleStaff,
+  storageKeys.notifications,
+]);
+
+const sharedSyncState = {
+  ready: false,
+  queue: {},
+  timer: null,
+};
+
+const pushSharedStateToServer = async () => {
+  const items = { ...sharedSyncState.queue };
+  sharedSyncState.queue = {};
+  sharedSyncState.timer = null;
+  if (!Object.keys(items).length) return;
+  try {
+    await fetch("/api/shared-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    });
+  } catch {
+    // Keep local data if network/server temporarily unavailable.
+  }
+};
+
+const queueSharedSync = (key, value) => {
+  if (!sharedStorageKeys.has(key)) return;
+  sharedSyncState.queue[key] = value;
+  if (sharedSyncState.timer) return;
+  sharedSyncState.timer = setTimeout(pushSharedStateToServer, 350);
+};
+
+const initSharedStorage = async () => {
+  if (sharedSyncState.ready) return;
+  try {
+    const res = await fetch("/api/shared-state", { cache: "no-store" });
+    if (res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const items = body && typeof body.items === "object" ? body.items : {};
+      sharedStorageKeys.forEach((key) => {
+        const hasServerValue = Object.prototype.hasOwnProperty.call(items, key);
+        if (hasServerValue) {
+          localStorage.setItem(key, JSON.stringify(items[key]));
+          return;
+        }
+        try {
+          const rawLocal = localStorage.getItem(key);
+          if (!rawLocal) return;
+          const parsed = JSON.parse(rawLocal);
+          queueSharedSync(key, parsed);
+        } catch {
+          // skip invalid local JSON
+        }
+      });
+    }
+  } catch {
+    // Use localStorage fallback when shared API is unavailable.
+  } finally {
+    sharedSyncState.ready = true;
+  }
+};
+
 const load = (key, fallback = []) => {
   try {
     const raw = localStorage.getItem(key);
@@ -81,7 +152,10 @@ const load = (key, fallback = []) => {
   }
 };
 
-const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+const save = (key, value) => {
+  localStorage.setItem(key, JSON.stringify(value));
+  queueSharedSync(key, value);
+};
 
 const fileToDataUrl = (file) =>
   new Promise((resolve, reject) => {

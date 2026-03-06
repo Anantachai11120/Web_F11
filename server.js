@@ -11,8 +11,20 @@ const port = Number(process.env.PORT || 3000);
 const dataDir = path.join(__dirname, 'data');
 const approvalsPath = path.join(dataDir, 'booking-approvals.json');
 const equipmentReturnsPath = path.join(dataDir, 'equipment-returns.json');
+const sharedStatePath = path.join(dataDir, 'shared-state.json');
 const nextWorkDir = path.join(dataDir, 'next-work');
 const traceFallbackDir = path.join(nextWorkDir, 'runtime-trace');
+const sharedStateKeys = new Set([
+  'lab_users',
+  'lab_room_bookings',
+  'lab_equipment_bookings',
+  'lab_equipment_items',
+  'lab_equipment_types',
+  'lab_announcements',
+  'lab_home_info',
+  'lab_responsible_staff',
+  'lab_notifications',
+]);
 
 const nativeCreateWriteStream = fs.createWriteStream.bind(fs);
 fs.createWriteStream = (targetPath, ...args) => {
@@ -197,6 +209,32 @@ const readEquipmentReturns = () => {
 const writeEquipmentReturns = (items) => {
   ensureEquipmentReturnsStore();
   fs.writeFileSync(equipmentReturnsPath, JSON.stringify({ items }, null, 2), 'utf8');
+};
+
+const ensureSharedStateStore = () => {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(sharedStatePath)) {
+    fs.writeFileSync(sharedStatePath, JSON.stringify({ items: {} }, null, 2), 'utf8');
+  }
+};
+
+const readSharedState = () => {
+  ensureSharedStateStore();
+  try {
+    const raw = fs.readFileSync(sharedStatePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const items = parsed.items;
+    if (!items || typeof items !== 'object' || Array.isArray(items)) return {};
+    return items;
+  } catch {
+    return {};
+  }
+};
+
+const writeSharedState = (items) => {
+  ensureSharedStateStore();
+  fs.writeFileSync(sharedStatePath, JSON.stringify({ items }, null, 2), 'utf8');
 };
 
 const upsertPendingRequest = (payload) => {
@@ -779,6 +817,26 @@ app.get('/api/equipment-return-batch-link', async (req, res) => {
 app.get('/api/confirmed-equipment-returns', (_req, res) => {
   const items = readEquipmentReturns().filter((i) => i.status === 'returned');
   return res.json({ ok: true, items });
+});
+
+app.get('/api/shared-state', (_req, res) => {
+  const items = readSharedState();
+  return res.json({ ok: true, items });
+});
+
+app.post('/api/shared-state', (req, res) => {
+  const payload = req.body && typeof req.body === 'object' ? req.body : {};
+  const incoming = payload.items && typeof payload.items === 'object' ? payload.items : null;
+  if (!incoming) {
+    return res.status(400).json({ ok: false, message: 'invalid_payload' });
+  }
+  const current = readSharedState();
+  for (const [key, value] of Object.entries(incoming)) {
+    if (!sharedStateKeys.has(key)) continue;
+    current[key] = value;
+  }
+  writeSharedState(current);
+  return res.json({ ok: true });
 });
 
 app.post('/api/send-broadcast-email', async (req, res) => {

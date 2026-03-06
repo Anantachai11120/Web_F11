@@ -267,7 +267,10 @@ const adminActions = () => {
   renderResponsibleAdminList();
 };
 
-seedAdmin();
+const bootstrapApp = async () => {
+  await initSharedStorage();
+
+  seedAdmin();
 seedHomeInfo();
 seedResponsibleStaff();
 seedEquipmentItems();
@@ -343,11 +346,14 @@ Promise.all([syncResponsibleApprovals(), syncEquipmentReturns()]).then(() => {
   renderProfilePage();
 });
 
-setInterval(() => {
+  setInterval(() => {
   Promise.all([syncResponsibleApprovals(), syncEquipmentReturns()]).then(() => {
     renderDashboard();
     renderRoomApproval();
     renderRoomSlots();
     renderProfilePage();
   });
-}, 15000);
+  }, 15000);
+};
+
+bootstrapApp();
