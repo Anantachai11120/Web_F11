@@ -2,6 +2,7 @@ import Head from "next/head";
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
+  const appVersion = "20260306-3";
   return (
     <>
       <Head>
@@ -20,7 +21,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
         <link rel="stylesheet" href="/assets/style.css" />
       </Head>
       <div dangerouslySetInnerHTML={{ __html: bodyHtml || "" }} />
-      <Script src="/assets/app.js" strategy="afterInteractive" />
+      <Script src={`/assets/app.js?v=${appVersion}`} strategy="afterInteractive" />
     </>
   );
 }

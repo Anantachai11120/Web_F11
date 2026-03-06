@@ -1,4 +1,5 @@
 (() => {
+  const version = "20260306-3";
   const parts = [
     "/assets/app.00.data.js",
     "/assets/app.01.core.js",
@@ -10,7 +11,7 @@
   const loadPart = (index) => {
     if (index >= parts.length) return;
     const script = document.createElement("script");
-    script.src = parts[index];
+    script.src = `${parts[index]}?v=${version}`;
     script.async = false;
     script.onload = () => loadPart(index + 1);
     script.onerror = () => {
