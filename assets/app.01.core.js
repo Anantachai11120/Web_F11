@@ -522,6 +522,19 @@ const setFooterYear = () => {
   if (yearNode) yearNode.textContent = String(new Date().getFullYear());
 };
 
+const syncRootAuthState = () => {
+  const root = document.documentElement;
+  const user = getCurrentUser();
+  if (!root) return;
+  if (!user) {
+    root.dataset.auth = "out";
+    root.dataset.role = "guest";
+    return;
+  }
+  root.dataset.auth = "in";
+  root.dataset.role = user.role === "admin" ? "admin" : "user";
+};
+
 const getSession = () => load(storageKeys.session, null);
 
 const getUsers = () => load(storageKeys.users);
@@ -587,6 +600,7 @@ const setupAdminNav = () => {
   adminLinks.forEach((link) => {
     link.hidden = !canShow;
   });
+  syncRootAuthState();
 };
 
 const setupAuthNav = () => {
@@ -596,6 +610,7 @@ const setupAuthNav = () => {
   authLinks.forEach((link) => {
     link.hidden = !isLoggedIn;
   });
+  syncRootAuthState();
 };
 
 const ensureAdminAccess = () => {

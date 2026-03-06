@@ -1558,3 +1558,10 @@ button:hover {
     grid-template-columns: 1fr;
   }
 }
+html.app-booting body {
+  visibility: hidden;
+}
+
+html.app-ready body {
+  visibility: visible;
+}
