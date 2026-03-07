@@ -1,0 +1,15 @@
+const storageKeys = {
+  users: "lab_users",
+  roomBookings: "lab_room_bookings",
+  equipmentBookings: "lab_equipment_bookings",
+  equipmentItems: "lab_equipment_items",
+  equipmentTypes: "lab_equipment_types",
+  session: "lab_session",
+  announcements: "lab_announcements",
+  lang: "lab_lang",
+  homeInfo: "lab_home_info",
+  responsibleStaff: "lab_responsible_staff",
+  notifications: "lab_notifications",
+  meta: "lab_meta",
+};
+

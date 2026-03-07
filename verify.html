@@ -21,8 +21,8 @@
         <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
         <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
         <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
-        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
         <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
         <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
       </nav>
     </div>
@@ -32,28 +32,37 @@
     <div class="container">
       <section class="hero">
         <h1>ยืนยันบัญชีสมาชิก</h1>
-        <p>กรอกอีเมลและรหัสยืนยันที่ได้จากหน้าสมัครสมาชิก</p>
+        <p>กรอกอีเมลและรหัสยืนยัน 6 หลักที่ส่งไปยังอีเมลที่สมัครไว้</p>
       </section>
 
-      <section class="grid grid-2">
-        <article class="card">
-          <h2>ฟอร์มยืนยัน</h2>
+      <section class="grid grid-2 verify-layout">
+        <article class="card verify-card-main">
+          <h2>ฟอร์มยืนยัน OTP</h2>
           <form id="verifyForm">
             <label for="verifyEmail">อีเมล</label>
             <input id="verifyEmail" type="email" placeholder="name@univ.ac.th" />
 
             <label for="verifyCode">รหัสยืนยัน</label>
-            <input id="verifyCode" type="text" placeholder="เช่น 123456" />
+            <input id="verifyCode" class="otp-input" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="รหัส OTP" />
 
             <button type="submit">ยืนยันบัญชี</button>
             <div id="verifyNotice" class="notice" hidden></div>
           </form>
         </article>
+        <article class="card verify-card-side">
+          <h3>วิธีใช้งาน</h3>
+          <ol>
+            <li>ตรวจสอบอีเมลที่ใช้สมัครสมาชิก</li>
+            <li>นำรหัส OTP 6 หลักมากรอก</li>
+            <li>กดยืนยัน แล้วเข้าสู่ระบบได้ทันที</li>
+          </ol>
+          <p class="muted">หากไม่พบอีเมล ให้ตรวจสอบในโฟลเดอร์ Spam/Junk</p>
+        </article>
       </section>
     </div>
   </main>
 
-  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+  <footer class="container footer">LabFlow <span id="year"></span></footer>
   <script src="assets/app.js"></script>
 </body>
 </html>

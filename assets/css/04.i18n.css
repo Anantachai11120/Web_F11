@@ -1,0 +1,55 @@
+  }
+
+  .announcement-editor-actions .btn-small {
+    width: 100%;
+  }
+
+  .admin-quota-actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-quota-actions .btn-small {
+    width: 100%;
+  }
+
+  .announcement-card.expanded {
+    grid-template-columns: 1fr;
+  }
+
+  .announcement-card.expanded .feed-image {
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-announce-grid {
+    grid-template-columns: 1fr;
+  }
+}
+html[data-lang-pref="en"]:not(.i18n-ready) body {
+  visibility: hidden;
+}
+
+.nav a.nav-pending {
+  transform: translateY(-1px);
+  filter: saturate(1.05);
+}
+
+html[lang="th"] .nav a {
+  font-weight: 600;
+  height: 36px;
+  padding: 0 0.74rem;
+}
+
+html[lang="th"] button {
+  font-weight: 600;
+  min-height: 36px;
+  padding-top: 0.52rem;
+  padding-bottom: 0.52rem;
+}
+
+html[lang="th"] .btn-small {
+  font-weight: 600;
+  min-height: 34px;
+  padding: 0.4rem 0.62rem;
+}

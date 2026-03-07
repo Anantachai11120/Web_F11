@@ -1,11 +1,19 @@
 (() => {
-  const version = "20260307-8";
+  const version = "20260307-18";
   const parts = [
-    "/assets/app.00.data.js",
-    "/assets/app.01.core.js",
-    "/assets/app.02.ui.js",
-    "/assets/app.03.api.js",
-    "/assets/app.04.bootstrap.js",
+    "/assets/modules/00.data.config.js",
+    "/assets/modules/01.data.i18n.js",
+    "/assets/modules/02.data.static.js",
+    "/assets/modules/10.core.a.js",
+    "/assets/modules/11.core.b.js",
+    "/assets/modules/12.booking.auth.js",
+    "/assets/modules/20.ui.a.js",
+    "/assets/modules/21.ui.b.js",
+    "/assets/modules/22.ui.eq-booking.js",
+    "/assets/modules/23.ui.c.js",
+    "/assets/modules/30.api.a.js",
+    "/assets/modules/31.api.b.js",
+    "/assets/modules/40.bootstrap.js",
   ];
 
   // Insert all scripts immediately so browser can fetch in parallel,

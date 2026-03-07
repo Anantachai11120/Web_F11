@@ -2,7 +2,7 @@ import Head from "next/head";
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260307-8";
+  const appVersion = "20260307-18";
   return (
     <>
       <Head>
@@ -18,17 +18,23 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
         <link rel="icon" type="image/png" href="/image/IconLab.png" />
         <link rel="shortcut icon" type="image/png" href="/image/IconLab.png" />
         <link rel="apple-touch-icon" href="/image/IconLab.png" />
-        <link rel="stylesheet" href="/assets/style.css" />
+        <link rel="stylesheet" href={`/assets/style.css?v=${appVersion}`} />
       </Head>
       <Script id="boot-state" strategy="beforeInteractive">{`
         (function () {
           try {
             var root = document.documentElement;
-            root.classList.remove("i18n-ready");
             var lang = localStorage.getItem("lab_lang");
             var isEn = lang === "en";
             root.lang = isEn ? "en" : "th";
             root.dataset.langPref = isEn ? "en" : "th";
+            if (isEn) root.classList.remove("i18n-ready");
+            else root.classList.add("i18n-ready");
+            if (isEn) {
+              window.setTimeout(function () {
+                if (!root.classList.contains("i18n-ready")) root.classList.add("i18n-ready");
+              }, 2500);
+            }
             var path = (location.pathname || "").toLowerCase();
             var pageName = "";
             if (path === "/equipment" || path.endsWith("/equipment.html")) pageName = "equipment";
@@ -45,6 +51,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
             try { session = raw ? JSON.parse(raw) : null; } catch (e) {}
             var loggedIn = !!(session && session.username);
             root.dataset.auth = loggedIn ? "in" : "out";
+            root.dataset.role = loggedIn ? ((session && session.role === "admin") ? "admin" : "user") : "guest";
 
             var dict = isEn ? {
               brandName: "UNDERGROUND LAB F11",
@@ -61,7 +68,26 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               roomStatusSectionTitle: "Booking Status",
               equipmentBookingFormTitle: "Equipment Booking Form",
               equipmentListTitle: "Equipment List"
-            } : {};
+            } : {
+              navLogin: loggedIn ? "ออกจากระบบ" : "เข้าสู่ระบบ"
+            };
+
+            var syncNavAndLangUi = function () {
+              try {
+                var selects = document.querySelectorAll("#languageSelect");
+                for (var s = 0; s < selects.length; s++) {
+                  selects[s].value = isEn ? "en" : "th";
+                }
+                var loginLinks = document.querySelectorAll('.nav a[data-i18n="navLogin"]');
+                for (var j = 0; j < loginLinks.length; j++) {
+                  var link = loginLinks[j];
+                  if (dict.navLogin) link.textContent = dict.navLogin;
+                  if (loggedIn) link.classList.add("logout-pill");
+                  else link.classList.remove("logout-pill");
+                }
+                root.classList.add("lang-ready");
+              } catch (e) {}
+            };
 
             var applyQuickI18n = function () {
               var nodes = document.querySelectorAll("[data-i18n]");
@@ -83,6 +109,13 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               };
               requestAnimationFrame(tick);
             }
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", syncNavAndLangUi, { once: true });
+            } else {
+              syncNavAndLangUi();
+            }
+            window.setTimeout(syncNavAndLangUi, 0);
+            window.setTimeout(syncNavAndLangUi, 120);
           } catch (e) {}
         })();
       `}</Script>

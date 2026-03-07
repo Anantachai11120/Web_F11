@@ -114,16 +114,25 @@ const queueSharedSync = (key, value) => {
 };
 
 const initSharedStorage = async () => {
-  if (sharedSyncState.ready) return;
+  if (sharedSyncState.ready) return false;
+  let changed = false;
   try {
-    const res = await fetch("/api/shared-state", { cache: "no-store" });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 1200);
+    const res = await fetch("/api/shared-state", {
+      cache: "no-store",
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
     if (res.ok) {
       const body = await res.json().catch(() => ({}));
       const items = body && typeof body.items === "object" ? body.items : {};
       sharedStorageKeys.forEach((key) => {
         const hasServerValue = Object.prototype.hasOwnProperty.call(items, key);
         if (hasServerValue) {
-          localStorage.setItem(key, JSON.stringify(items[key]));
+          const nextRaw = JSON.stringify(items[key]);
+          const prevRaw = localStorage.getItem(key);
+          if (prevRaw !== nextRaw) changed = true;
+          writeLocalStorageSafe(key, items[key]);
           return;
         }
         try {
@@ -141,6 +150,7 @@ const initSharedStorage = async () => {
   } finally {
     sharedSyncState.ready = true;
   }
+  return changed;
 };
 
 const load = (key, fallback = []) => {
@@ -152,15 +162,81 @@ const load = (key, fallback = []) => {
   }
 };
 
+const isQuotaExceededError = (error) => {
+  if (!error) return false;
+  const name = String(error.name || "");
+  const code = Number(error.code || 0);
+  return name === "QuotaExceededError" || code === 22 || code === 1014;
+};
+
+const stripLargeDataUrls = (input, maxLength = 45_000) => {
+  if (typeof input === "string") {
+    if (input.startsWith("data:image/") && input.length > maxLength) return "";
+    return input;
+  }
+  if (Array.isArray(input)) return input.map((v) => stripLargeDataUrls(v, maxLength));
+  if (!input || typeof input !== "object") return input;
+  const out = {};
+  Object.entries(input).forEach(([k, v]) => {
+    out[k] = stripLargeDataUrls(v, maxLength);
+  });
+  return out;
+};
+
+const writeLocalStorageSafe = (key, value) => {
+  const raw = JSON.stringify(value);
+  try {
+    localStorage.setItem(key, raw);
+    return true;
+  } catch (error) {
+    if (!isQuotaExceededError(error)) return false;
+  }
+
+  try {
+    const compactValue = stripLargeDataUrls(value);
+    localStorage.setItem(key, JSON.stringify(compactValue));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const save = (key, value) => {
-  localStorage.setItem(key, JSON.stringify(value));
   queueSharedSync(key, value);
+  writeLocalStorageSafe(key, value);
 };
 
 const fileToDataUrl = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("read_failed"));
+    reader.readAsDataURL(file);
+  });
+
+const optimizeImageFileToDataUrl = (file, maxSize = 520, quality = 0.82) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * ratio));
+        const h = Math.max(1, Math.round(img.height * ratio));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("canvas_failed"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("image_decode_failed"));
+      img.src = String(reader.result || "");
+    };
     reader.onerror = () => reject(new Error("read_failed"));
     reader.readAsDataURL(file);
   });
@@ -476,6 +552,59 @@ const activeNav = () => {
   });
 };
 
+const normalizeNavPath = (href) => {
+  const raw = String(href || "").trim();
+  if (!raw || raw.startsWith("#") || raw.startsWith("javascript:")) return "";
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      return u.pathname || "/";
+    } catch {
+      return "";
+    }
+  }
+  let p = raw;
+  if (!p.startsWith("/")) p = `/${p}`;
+  p = p.replace(/\/index\.html$/i, "/").replace(/\.html$/i, "");
+  if (!p) return "/";
+  return p;
+};
+
+const setupFastNavUX = () => {
+  const links = Array.from(document.querySelectorAll(".nav a[href]"));
+  if (!links.length) return;
+  links.forEach((link) => {
+    if (!(link instanceof HTMLAnchorElement)) return;
+    if (link.dataset.navFastBound) return;
+    link.dataset.navFastBound = "1";
+    link.addEventListener("click", () => {
+      const target = normalizeNavPath(link.getAttribute("href"));
+      if (!target) return;
+      const current = normalizeNavPath(location.pathname);
+      if (target === current) return;
+      document.querySelectorAll(".nav a.active").forEach((a) => a.classList.remove("active"));
+      link.classList.add("active");
+      link.classList.add("nav-pending");
+      window.setTimeout(() => link.classList.remove("nav-pending"), 600);
+    });
+  });
+};
+
+const prefetchNavPages = () => {
+  const pages = ["/", "/rooms", "/equipment", "/profile", "/login", "/admin"];
+  const head = document.head || document.getElementsByTagName("head")[0];
+  if (!head) return;
+  pages.forEach((href) => {
+    if (document.querySelector(`link[data-nav-prefetch="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "prefetch";
+    link.href = href;
+    link.as = "document";
+    link.dataset.navPrefetch = href;
+    head.appendChild(link);
+  });
+};
+
 const performLogout = ({ redirect = true } = {}) => {
   localStorage.removeItem(storageKeys.session);
   setupAdminNav();
@@ -495,21 +624,16 @@ const performLogout = ({ redirect = true } = {}) => {
 };
 
 const updateNavAuthState = () => {
-  const user = getCurrentUser();
+  const isLoggedIn = isLoggedInSession();
   const authLinks = Array.from(document.querySelectorAll('.nav a[data-i18n="navLogin"]'));
   authLinks.forEach((link) => {
     if (!(link instanceof HTMLAnchorElement)) return;
-    link.textContent = user ? t("navLogout") : t("navLogin");
-    link.classList.toggle("logout-pill", Boolean(user));
-    const nav = link.closest(".nav");
-    const profileLink = nav?.querySelector('a[href="profile.html"]');
-    if (user && nav && profileLink instanceof HTMLElement) {
-      nav.insertBefore(profileLink, link);
-    }
+    link.textContent = isLoggedIn ? t("navLogout") : t("navLogin");
+    link.classList.toggle("logout-pill", isLoggedIn);
     if (!link.dataset.logoutBound) {
       link.dataset.logoutBound = "1";
       link.addEventListener("click", (e) => {
-        if (!getCurrentUser()) return;
+        if (!isLoggedInSession()) return;
         e.preventDefault();
         performLogout({ redirect: true });
       });
@@ -522,20 +646,29 @@ const setFooterYear = () => {
   if (yearNode) yearNode.textContent = String(new Date().getFullYear());
 };
 
+const getSession = () => load(storageKeys.session, null);
+
+const isLoggedInSession = () => {
+  const session = getSession();
+  return Boolean(session && session.username);
+};
+
+const getSessionRole = () => {
+  const session = getSession();
+  return session?.role === "admin" ? "admin" : "user";
+};
+
 const syncRootAuthState = () => {
   const root = document.documentElement;
-  const user = getCurrentUser();
   if (!root) return;
-  if (!user) {
+  if (!isLoggedInSession()) {
     root.dataset.auth = "out";
     root.dataset.role = "guest";
     return;
   }
   root.dataset.auth = "in";
-  root.dataset.role = user.role === "admin" ? "admin" : "user";
+  root.dataset.role = getSessionRole();
 };
-
-const getSession = () => load(storageKeys.session, null);
 
 const getUsers = () => load(storageKeys.users);
 
@@ -549,7 +682,16 @@ const getCurrentUser = () => {
   const session = getSession();
   if (!session) return null;
   const users = getUsers();
-  return users.find((u) => u.username === session.username) || null;
+  const found = users.find((u) => u.username === session.username);
+  if (found) return found;
+  // Keep UI stable even when users list is not hydrated yet.
+  return {
+    username: session.username || "",
+    email: session.email || "",
+    name: session.name || session.username || "",
+    role: session.role || "user",
+    verified: true,
+  };
 };
 
 const roleLabel = (role) => (role === "admin" ? t("roleAdmin") : t("roleUser"));
@@ -575,6 +717,7 @@ const sortRoomBookingsByUsageDesc = (list = []) =>
   });
 
 const isAdminSession = () => {
+  if (getSessionRole() === "admin") return true;
   const user = getCurrentUser();
   return Boolean(user && user.role === "admin");
 };
@@ -596,7 +739,7 @@ const requireAdminAction = () => {
 const setupAdminNav = () => {
   const adminLinks = document.querySelectorAll('.nav a[href="admin.html"], .admin-only');
   if (!adminLinks.length) return;
-  const canShow = isAdminSession();
+  const canShow = getSessionRole() === "admin" || isAdminSession();
   adminLinks.forEach((link) => {
     link.hidden = !canShow;
   });
@@ -606,7 +749,7 @@ const setupAdminNav = () => {
 const setupAuthNav = () => {
   const authLinks = document.querySelectorAll('.nav a[href="profile.html"], .auth-only');
   if (!authLinks.length) return;
-  const isLoggedIn = Boolean(getCurrentUser());
+  const isLoggedIn = isLoggedInSession();
   authLinks.forEach((link) => {
     link.hidden = !isLoggedIn;
   });
@@ -615,11 +758,7 @@ const setupAuthNav = () => {
 
 const ensureAdminAccess = () => {
   const page = getCurrentPage();
-  if (page === "profile.html" && !getCurrentUser()) {
-    location.href = "login.html";
-    return;
-  }
-  if (page === "verify.html" && !isAdminSession()) {
+  if (page === "profile.html" && !isLoggedInSession()) {
     location.href = "login.html";
     return;
   }
@@ -671,224 +810,3 @@ const setupClientHardening = () => {
   });
 };
 
-const seedHomeInfo = () => {
-  const exists = localStorage.getItem(storageKeys.homeInfo);
-  if (exists) return;
-  save(storageKeys.homeInfo, defaultHomeInfo);
-};
-
-const seedResponsibleStaff = () => {
-  const exists = localStorage.getItem(storageKeys.responsibleStaff);
-  if (exists) return;
-  save(storageKeys.responsibleStaff, defaultResponsibleStaff);
-};
-
-const seedEquipmentItems = () => {
-  const exists = localStorage.getItem(storageKeys.equipmentItems);
-  if (exists) return;
-  save(storageKeys.equipmentItems, defaultEquipmentItems);
-};
-
-const seedEquipmentTypes = () => {
-  const exists = localStorage.getItem(storageKeys.equipmentTypes);
-  if (exists) return;
-  save(storageKeys.equipmentTypes, defaultEquipmentTypes);
-};
-
-const normalizeEquipmentBookingsData = () => {
-  const list = load(storageKeys.equipmentBookings, []);
-  if (!Array.isArray(list) || !list.length) return;
-  const staff = getResponsibleStaff();
-  const defaultResponsibleId = staff[0]?.id || "";
-  const items = normalizeEquipmentItems();
-  let changed = false;
-  const normalized = list.map((b) => {
-    const next = { ...b };
-    if (!next.bookingId) {
-      next.bookingId = `eqb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      changed = true;
-    }
-    if (!next.room) {
-      next.room = "Lab-F11";
-      changed = true;
-    }
-    if (!next.returnStatus) {
-      next.returnStatus = "borrowed";
-      changed = true;
-    }
-    if (!next.responsibleId) {
-      next.responsibleId = defaultResponsibleId;
-      changed = true;
-    }
-    if (!next.itemId && next.item) {
-      const hit = items.find((i) => i.name === next.item);
-      if (hit) {
-        next.itemId = hit.id;
-        changed = true;
-      }
-    }
-    return next;
-  });
-  if (changed) save(storageKeys.equipmentBookings, normalized);
-};
-
-const migrateLegacyData = () => {
-  const targetVersion = 3;
-  const meta = load(storageKeys.meta, { version: 0 });
-  if (Number(meta.version || 0) >= targetVersion) return;
-
-  const staff = load(storageKeys.responsibleStaff, defaultResponsibleStaff);
-  const defaultResponsibleId = staff[0]?.id || "";
-
-  const roomBookings = load(storageKeys.roomBookings, []).map((b) => {
-    const requesterName = b.requesterName || b.name || "";
-    const participantCount =
-      Number(
-        b.participantCount ||
-        [requesterName, b.member1 || "", b.member2 || ""].filter(Boolean).length ||
-        1
-      );
-    return {
-      ...b,
-      requesterName,
-      name: requesterName,
-      room: b.room || "Lab-F11",
-      bookingId: b.bookingId || `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      participantCount,
-      responsibleId: b.responsibleId || defaultResponsibleId,
-      status: b.status || "pending",
-    };
-  });
-  save(storageKeys.roomBookings, roomBookings);
-
-  const users = load(storageKeys.users, []).map((u) => ({
-    ...u,
-    studentId: u.studentId || "",
-    year: u.year || "",
-    school: u.school || "",
-    major: u.major || "",
-    phone: u.phone || "",
-    profileImage: u.profileImage || "",
-  }));
-  save(storageKeys.users, users);
-
-  const equipmentBookings = load(storageKeys.equipmentBookings, []).map((b) => ({
-    ...b,
-    bookingId: b.bookingId || `eqb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    timeSlot: b.timeSlot || "",
-    room: b.room || "Lab-F11",
-    responsibleId: b.responsibleId || defaultResponsibleId,
-    returnStatus: b.returnStatus || "borrowed",
-  }));
-  save(storageKeys.equipmentBookings, equipmentBookings);
-
-  const items = load(storageKeys.equipmentItems, []);
-  if (!Array.isArray(items) || !items.length) {
-    save(storageKeys.equipmentItems, defaultEquipmentItems);
-  } else {
-    save(
-      storageKeys.equipmentItems,
-      items.map((it, idx) => ({
-        id: it.id || `eq-${idx + 1}`,
-        name: it.name || `Item ${idx + 1}`,
-        image: it.image || "image/IconLab.png",
-        stock: Math.max(1, Number(it.stock || 1)),
-        type: it.type || "ทั่วไป",
-      }))
-    );
-  }
-
-  const types = load(storageKeys.equipmentTypes, []);
-  if (!Array.isArray(types) || !types.length) {
-    save(storageKeys.equipmentTypes, defaultEquipmentTypes);
-  } else {
-    const normalizedTypes = [...new Set(types.map((v) => String(v || "").trim()).filter(Boolean))];
-    if (!normalizedTypes.length) normalizedTypes.push(...defaultEquipmentTypes);
-    save(storageKeys.equipmentTypes, normalizedTypes);
-  }
-
-  save(storageKeys.meta, { version: targetVersion, migratedAt: new Date().toISOString() });
-};
-
-const syncResponsibleApprovals = async () => {
-  try {
-    const res = await fetch('/api/confirmed-bookings');
-    if (!res.ok) return;
-    const body = await res.json();
-    if (!Array.isArray(body.items)) return;
-    const map = new Map(body.items.map((i) => [i.bookingId, i]));
-    const list = load(storageKeys.roomBookings, []);
-    let changed = false;
-    list.forEach((b) => {
-      const hit = map.get(b.bookingId);
-      if (!hit) return;
-      if (b.status !== hit.status) {
-        b.status = hit.status;
-        if (hit.status === 'approved') {
-          b.approvedBy = hit.approvedBy || 'responsible';
-          b.approvedAt = hit.approvedAt || new Date().toISOString();
-        } else if (hit.status === 'rejected') {
-          b.rejectedBy = hit.rejectedBy || 'responsible';
-          b.rejectedAt = hit.rejectedAt || new Date().toISOString();
-        }
-        changed = true;
-      }
-    });
-    if (changed) save(storageKeys.roomBookings, list);
-  } catch {
-    // API may be unavailable when static host is used.
-  }
-};
-
-const updateVisitorCounters = () => {
-  const page = location.pathname.split("/").pop() || "index.html";
-  if (page !== "index.html") return;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const marker = `lab_visit_counted_${today}`;
-  const info = { ...defaultHomeInfo, ...load(storageKeys.homeInfo, defaultHomeInfo) };
-
-  if (info.visitorsDate !== today) {
-    info.visitorsDate = today;
-    info.visitorsToday = 0;
-  }
-
-  if (!sessionStorage.getItem(marker)) {
-    info.visitorsTotal = Number(info.visitorsTotal || 0) + 1;
-    info.visitorsToday = Number(info.visitorsToday || 0) + 1;
-    sessionStorage.setItem(marker, "1");
-    save(storageKeys.homeInfo, info);
-  }
-};
-
-const seedAdmin = () => {
-  const users = load(storageKeys.users);
-  const adminUsername = "Anantachai2000";
-  const hasAdmin = users.some((u) => u.username === adminUsername);
-  if (hasAdmin) return;
-
-  users.push({
-    name: "System Admin",
-    username: adminUsername,
-    email: "anantachai2000@labflow.local",
-    password: "Wave_862543",
-    verified: true,
-    verificationCode: "000000",
-    role: "admin",
-    roomQuotaDaily: 1,
-    roomQuotaWeekly: 3,
-  });
-  save(storageKeys.users, users);
-};
-
-const normalizeUsers = () => {
-  const users = load(storageKeys.users);
-  const normalized = users.map((u) => ({
-    ...u,
-    username: u.username || (u.email ? u.email.split("@")[0] : "user"),
-    role: u.role || "user",
-    roomQuotaDaily: Math.max(1, Number(u.roomQuotaDaily || 1)),
-    roomQuotaWeekly: Math.max(1, Number(u.roomQuotaWeekly || 3)),
-  }));
-  save(storageKeys.users, normalized);
-};

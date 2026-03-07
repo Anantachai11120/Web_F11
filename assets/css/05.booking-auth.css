@@ -1,0 +1,17 @@
+/* Booking UI guard to avoid guest-mode flicker before app bootstrap */
+html[data-auth="out"][data-page="rooms"] #roomBookingCard {
+  display: none !important;
+}
+
+html[data-auth="out"][data-page="equipment"] #equipmentBookingCard {
+  display: none !important;
+}
+
+html[data-auth="out"][data-page="rooms"] #roomMainGrid,
+html[data-auth="out"][data-page="equipment"] #equipmentMainGrid {
+  grid-template-columns: 1fr !important;
+}
+
+html[data-auth="out"][data-page="rooms"] #roomLegendMine {
+  display: none !important;
+}

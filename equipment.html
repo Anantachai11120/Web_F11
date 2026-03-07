@@ -21,8 +21,8 @@
         <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
         <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
         <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
-        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
         <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
         <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
       </nav>
     </div>
@@ -52,7 +52,7 @@
       </section>
 
       <section id="equipmentMainGrid" class="grid grid-2">
-        <article id="equipmentBookingCard" class="card">
+        <article id="equipmentBookingCard" class="card" hidden>
           <h2 data-i18n="equipmentBookingFormTitle">แบบฟอร์มจองอุปกรณ์</h2>
           <form id="equipmentBookingForm">
             <label for="eqName" data-i18n="equipmentBookerLabel">ชื่อผู้จอง</label>
@@ -162,7 +162,7 @@
     </div>
   </main>
 
-  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+  <footer class="container footer">LabFlow <span id="year"></span></footer>
 
   <div id="equipmentRulesModal" class="rules-modal-backdrop" hidden>
     <div class="rules-modal">

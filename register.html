@@ -21,8 +21,8 @@
         <a href="index.html" data-i18n="navHome">หน้าหลัก</a>
         <a href="rooms.html" data-i18n="navRooms">จองห้อง</a>
         <a href="equipment.html" data-i18n="navEquipment">จองอุปกรณ์</a>
-        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
         <a href="profile.html" class="auth-only" hidden data-i18n="navProfile">โปรไฟล์</a>
+        <a href="login.html" data-i18n="navLogin">เข้าสู่ระบบ</a>
         <a href="admin.html" class="admin-only" hidden data-i18n="navAdmin">แอดมิน</a>
       </nav>
     </div>
@@ -71,7 +71,20 @@
             <input id="regEmail" type="email" placeholder="name@univ.ac.th" />
 
             <label for="regPassword">รหัสผ่าน</label>
-            <input id="regPassword" type="password" placeholder="อย่างน้อย 6 ตัวอักษร" />
+            <div class="password-input-wrap">
+              <input id="regPassword" type="password" placeholder="อย่างน้อย 6 ตัวอักษร" />
+              <button type="button" id="toggleRegPassword" class="password-toggle-btn" aria-label="toggle password visibility">
+                <img class="password-toggle-icon" src="image/hidden.png" alt="toggle password" />
+              </button>
+            </div>
+
+            <label for="regConfirmPassword">ยืนยันรหัสผ่าน</label>
+            <div class="password-input-wrap">
+              <input id="regConfirmPassword" type="password" placeholder="กรอกรหัสผ่านอีกครั้ง" />
+              <button type="button" id="toggleRegConfirmPassword" class="password-toggle-btn" aria-label="toggle password visibility">
+                <img class="password-toggle-icon" src="image/hidden.png" alt="toggle password" />
+              </button>
+            </div>
 
             <label for="regProfileImage">อัปโหลดภาพโปรไฟล์</label>
             <input id="regProfileImage" type="file" accept="image/*" />
@@ -84,7 +97,15 @@
     </div>
   </main>
 
-  <footer class="container footer">LabFlow Demo <span id="year"></span></footer>
+  <div id="registerLoadingOverlay" class="register-loading-backdrop" hidden>
+    <div class="register-loading-card">
+      <div class="register-loading-spinner" aria-hidden="true"></div>
+      <h3>กำลังส่งรหัสยืนยัน</h3>
+      <p>กรุณารอสักครู่ ระบบกำลังตรวจสอบข้อมูลและส่ง OTP ไปยังอีเมล</p>
+    </div>
+  </div>
+
+  <footer class="container footer">LabFlow <span id="year"></span></footer>
   <script src="assets/app.js"></script>
 </body>
 </html>

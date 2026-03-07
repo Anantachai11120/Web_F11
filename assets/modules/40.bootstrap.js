@@ -155,7 +155,13 @@ const adminActions = () => {
       const index = Number(target.dataset.verifyUser);
       const users = load(storageKeys.users);
       if (!users[index]) return;
-      users[index].verified = true;
+      const user = users[index];
+      if (!user.verified) {
+        user.verified = true;
+        user.suspended = false;
+      } else {
+        user.suspended = !Boolean(user.suspended);
+      }
       save(storageKeys.users, users);
       renderAdminUsers();
       renderAdminUserProfilePanel();
@@ -268,94 +274,124 @@ const adminActions = () => {
 };
 
 const bootstrapApp = async () => {
-  await initSharedStorage();
+  const sharedSyncPromise = initSharedStorage();
 
-  seedAdmin();
-seedHomeInfo();
-seedResponsibleStaff();
-seedEquipmentItems();
-seedEquipmentTypes();
-migrateLegacyData();
-normalizeEquipmentBookingsData();
-updateVisitorCounters();
-normalizeUsers();
-setupClientHardening();
-applyTranslations();
-setupLanguageSelector();
-activeNav();
-updateNavAuthState();
-setFooterYear();
+  setupClientHardening();
+  applyTranslations();
+  setupLanguageSelector();
+  activeNav();
+  setupFastNavUX();
+  prefetchNavPages();
+  updateNavAuthState();
+  setFooterYear();
   setupAuthNav();
   setupAdminNav();
-  document.documentElement.classList.remove("app-booting");
-  document.documentElement.classList.add("app-ready");
-  ensureAdminAccess();
-renderAnnouncements();
-renderHomeBottomInfo();
-renderProfilePage();
-registerForm();
-verifyForm();
-loginForm();
-setupRoomBookingUI();
-setupEquipmentBookingUI();
-updateBookingAuthUI();
-setupCropTool();
-setupEquipmentCropTool();
-refreshCropStatusByState();
-adminActions();
-setupResponsibleAdmin();
-setupEquipmentAdminTools();
-setupHomeBottomEditor();
-setupAnnouncementEditor();
-setupAdminQuotaModal();
-bookingForm({
-  formId: "roomBookingForm",
-  noticeId: "roomNotice",
-  key: storageKeys.roomBookings,
-  mapData: () => {
-    const me = getCurrentUser();
-    const requesterName = byId("roomRequesterName")?.value?.trim() || "";
-    const member1 = byId("roomMember1")?.value?.trim() || "";
-    const member2 = byId("roomMember2")?.value?.trim() || "";
-    const purposeType =
-      document.querySelector('input[name="roomPurposeType"]:checked')?.value || "";
-    const purposeOther = byId("roomPurposeOther")?.value?.trim() || "";
-    const purpose =
-      purposeType === "อื่นๆ" ? (purposeOther || "อื่นๆ") : purposeType;
-    const participantCount =
-      [requesterName, member1, member2].filter((v) => Boolean(v)).length || 1;
-    return {
-      requesterName,
-      member1,
-      member2,
-      name: requesterName,
-      username: me?.username || "",
-      email: me?.email || "",
-      room: byId("roomFixed")?.value || "Lab-F11",
-      date: byId("roomDate")?.value || "",
-      timeSlot: byId("roomTime")?.value || "",
-      purpose,
-      purposeType,
-      responsibleId: byId("selectedResponsibleId")?.value || "",
-      participantCount,
-    };
-  },
-});
-Promise.all([syncResponsibleApprovals(), syncEquipmentReturns()]).then(() => {
-  renderDashboard();
-  renderRoomApproval();
-  renderRoomSlots();
-  renderProfilePage();
-});
+  document.documentElement.classList.add("i18n-ready");
 
-  setInterval(() => {
+  seedAdmin();
+  seedHomeInfo();
+  seedResponsibleStaff();
+  seedEquipmentItems();
+  seedEquipmentTypes();
+  migrateLegacyData();
+  normalizeEquipmentBookingsData();
+  updateVisitorCounters();
+  normalizeUsers();
+  ensureAdminAccess();
+  renderAnnouncements();
+  renderHomeBottomInfo();
+  renderProfilePage();
+  registerForm();
+  verifyForm();
+  loginForm();
+  updateBookingAuthUI();
+  setupRoomBookingUI();
+  setupEquipmentBookingUI();
+  setupCropTool();
+  setupEquipmentCropTool();
+  refreshCropStatusByState();
+  adminActions();
+  setupResponsibleAdmin();
+  setupEquipmentAdminTools();
+  setupHomeBottomEditor();
+  setupAnnouncementEditor();
+  setupAdminQuotaModal();
+  bookingForm({
+    formId: "roomBookingForm",
+    noticeId: "roomNotice",
+    key: storageKeys.roomBookings,
+    mapData: () => {
+      const me = getCurrentUser();
+      const requesterName = byId("roomRequesterName")?.value?.trim() || "";
+      const member1 = byId("roomMember1")?.value?.trim() || "";
+      const member2 = byId("roomMember2")?.value?.trim() || "";
+      const purposeType =
+        document.querySelector('input[name="roomPurposeType"]:checked')?.value || "";
+      const purposeOther = byId("roomPurposeOther")?.value?.trim() || "";
+      const otherPurpose = "\u0E2D\u0E37\u0E48\u0E19\u0E46";
+      const purpose = purposeType === otherPurpose ? (purposeOther || otherPurpose) : purposeType;
+      const participantCount =
+        [requesterName, member1, member2].filter((v) => Boolean(v)).length || 1;
+      return {
+        requesterName,
+        member1,
+        member2,
+        name: requesterName,
+        username: me?.username || "",
+        email: me?.email || "",
+        room: byId("roomFixed")?.value || "Lab-F11",
+        date: byId("roomDate")?.value || "",
+        timeSlot: byId("roomTime")?.value || "",
+        purpose,
+        purposeType,
+        responsibleId: byId("selectedResponsibleId")?.value || "",
+        participantCount,
+      };
+    },
+  });
+
   Promise.all([syncResponsibleApprovals(), syncEquipmentReturns()]).then(() => {
     renderDashboard();
     renderRoomApproval();
     renderRoomSlots();
     renderProfilePage();
   });
+
+  setInterval(() => {
+    Promise.all([syncResponsibleApprovals(), syncEquipmentReturns()]).then(() => {
+      renderDashboard();
+      renderRoomApproval();
+      renderRoomSlots();
+      renderProfilePage();
+    });
   }, 15000);
+
+  sharedSyncPromise.then((changed) => {
+    if (!changed) return;
+    normalizeUsers();
+    updateNavAuthState();
+    setupAuthNav();
+    setupAdminNav();
+    renderDashboard();
+    renderAnnouncements();
+    renderHomeBottomInfo();
+    renderProfilePage();
+    renderRoomSlots();
+    renderRoomApproval();
+    renderResponsibleOptions();
+    renderEqResponsibleOptions();
+    renderEquipmentCatalog();
+    renderSelectedEquipmentList();
+    renderAdminUsers();
+    renderAdminUserProfilePanel();
+    renderAdminEquipmentBorrowSummary();
+    renderBroadcastRecipientList();
+    renderAdminAnnouncements();
+    renderResponsibleAdminList();
+  });
 };
 
 bootstrapApp();
+
+
+

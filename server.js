@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const dns = require('dns').promises;
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -82,13 +83,82 @@ app.use('/api', (req, res, next) => {
   req.body = sanitizePayload(req.body);
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const key = `${String(ip)}:${req.path}`;
-  const strictRoute = req.path.startsWith('/send-');
+  const strictRoute = req.path.startsWith('/send-') || req.path === '/validate-register-email';
   const limited = isRateLimited(key, 60_000, strictRoute ? 12 : 120);
   if (limited) {
     return res.status(429).json({ ok: false, message: 'too_many_requests' });
   }
   return next();
 });
+
+const tempMailDomains = new Set([
+  'mailinator.com',
+  'guerrillamail.com',
+  '10minutemail.com',
+  'yopmail.com',
+  'tempmail.com',
+  'trashmail.com',
+  'getnada.com',
+  'sharklasers.com',
+  'dispostable.com',
+  'maildrop.cc',
+  'fakeinbox.com',
+  'temp-mail.org',
+  'tempmailo.com',
+]);
+
+const waitTimeout = (ms, fallback = null) =>
+  new Promise((resolve) => {
+    setTimeout(() => resolve(fallback), ms);
+  });
+
+const validateRegisterEmail = async (rawEmail) => {
+  const email = String(rawEmail || '').trim().toLowerCase();
+  const emailPattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
+  if (!emailPattern.test(email)) {
+    return { ok: false, reason: 'invalid_format' };
+  }
+  if (email.length > 254) {
+    return { ok: false, reason: 'invalid_format' };
+  }
+  const at = email.lastIndexOf('@');
+  const domain = at > -1 ? email.slice(at + 1) : '';
+  if (!domain || domain.length < 4 || domain.includes('..') || domain.startsWith('.') || domain.endsWith('.')) {
+    return { ok: false, reason: 'invalid_format' };
+  }
+  if (tempMailDomains.has(domain)) {
+    return { ok: false, reason: 'disposable_domain' };
+  }
+  if (domain === 'localhost' || domain.endsWith('.local') || domain.endsWith('.invalid') || domain.endsWith('.test')) {
+    return { ok: false, reason: 'invalid_domain' };
+  }
+
+  try {
+    const mxResult = await Promise.race([
+      dns.resolveMx(domain),
+      waitTimeout(2500, []),
+    ]);
+    if (Array.isArray(mxResult) && mxResult.length > 0) {
+      return { ok: true, email, domain };
+    }
+  } catch {
+    // fallback to A/AAAA check
+  }
+
+  try {
+    const hostResult = await Promise.race([
+      Promise.any([dns.resolve4(domain), dns.resolve6(domain)]),
+      waitTimeout(2500, []),
+    ]);
+    if (Array.isArray(hostResult) && hostResult.length > 0) {
+      return { ok: true, email, domain };
+    }
+  } catch {
+    // no DNS record
+  }
+
+  return { ok: false, reason: 'domain_not_found' };
+};
 
 const requiredEnv = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM'];
 const missing = requiredEnv.filter((k) => !process.env[k]);
@@ -819,6 +889,22 @@ app.get('/api/confirmed-equipment-returns', (_req, res) => {
   return res.json({ ok: true, items });
 });
 
+app.post('/api/validate-register-email', async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').trim();
+    if (!email) {
+      return res.status(400).json({ ok: false, reason: 'required' });
+    }
+    const result = await validateRegisterEmail(email);
+    if (!result.ok) {
+      return res.status(400).json(result);
+    }
+    return res.json({ ok: true, email: result.email, domain: result.domain });
+  } catch (error) {
+    return res.status(500).json({ ok: false, reason: 'server_error', message: error.message || 'server_error' });
+  }
+});
+
 app.get('/api/shared-state', (_req, res) => {
   const items = readSharedState();
   return res.json({ ok: true, items });
@@ -870,6 +956,48 @@ app.post('/api/send-broadcast-email', async (req, res) => {
     return res.json({ ok: true, sent: to.length, messageId: info.messageId || '' });
   } catch (error) {
     console.error('send-broadcast-email error:', error.message || error);
+    return res.status(500).json({ ok: false, message: error.message || 'send_failed' });
+  }
+});
+
+app.post('/api/send-register-otp', async (req, res) => {
+  try {
+    if (missing.length) {
+      return res.status(500).json({ ok: false, message: `Missing env: ${missing.join(', ')}` });
+    }
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const code = String(req.body?.code || '').trim();
+    const name = String(req.body?.name || '').trim() || 'User';
+    if (!email || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)) {
+      return res.status(400).json({ ok: false, message: 'invalid_email' });
+    }
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({ ok: false, message: 'invalid_code' });
+    }
+
+    const subject = 'รหัสยืนยันสมาชิก UNDERGROUND LAB F11';
+    const text = `เรียน ${name}\n\nรหัสยืนยัน (OTP) ของคุณคือ: ${code}\nรหัสนี้มีอายุการใช้งาน 10 นาที\n\nหากคุณไม่ได้ทำรายการสมัครสมาชิก กรุณาเพิกเฉยอีเมลนี้`;
+    const html = `
+      <div style="font-family:Arial,sans-serif;line-height:1.65;color:#243542">
+        <h2 style="margin:0 0 8px">ยืนยันการสมัครสมาชิก</h2>
+        <p>เรียน ${name}</p>
+        <p>รหัสยืนยัน (OTP) ของคุณคือ</p>
+        <div style="display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;padding:10px 14px;background:#eef9f4;border:1px solid #b8ded1;border-radius:10px;color:#2e6f5a">${code}</div>
+        <p style="margin-top:12px">รหัสนี้มีอายุการใช้งาน 10 นาที</p>
+        <p style="color:#5f6f79">หากคุณไม่ได้ทำรายการสมัครสมาชิก กรุณาเพิกเฉยอีเมลนี้</p>
+      </div>
+    `;
+
+    const info = await sendMailUtf8({
+      from: process.env.MAIL_FROM,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+    return res.json({ ok: true, messageId: info.messageId || '' });
+  } catch (error) {
+    console.error('send-register-otp error:', error.message || error);
     return res.status(500).json({ ok: false, message: error.message || 'send_failed' });
   }
 });
