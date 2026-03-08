@@ -109,6 +109,7 @@ const pushSharedStateToServer = async () => {
 const queueSharedSync = (key, value) => {
   if (!sharedStorageKeys.has(key)) return;
   sharedSyncState.queue[key] = value;
+  if (!sharedSyncState.ready) return;
   if (sharedSyncState.timer) return;
   sharedSyncState.timer = setTimeout(pushSharedStateToServer, 350);
 };
@@ -129,6 +130,8 @@ const initSharedStorage = async () => {
       sharedStorageKeys.forEach((key) => {
         const hasServerValue = Object.prototype.hasOwnProperty.call(items, key);
         if (hasServerValue) {
+          // Server state wins: prevent stale pre-sync local queue from overwriting it.
+          delete sharedSyncState.queue[key];
           const nextRaw = JSON.stringify(items[key]);
           const prevRaw = localStorage.getItem(key);
           if (prevRaw !== nextRaw) changed = true;
@@ -149,6 +152,10 @@ const initSharedStorage = async () => {
     // Use localStorage fallback when shared API is unavailable.
   } finally {
     sharedSyncState.ready = true;
+    if (Object.keys(sharedSyncState.queue).length) {
+      if (sharedSyncState.timer) clearTimeout(sharedSyncState.timer);
+      sharedSyncState.timer = setTimeout(pushSharedStateToServer, 0);
+    }
   }
   return changed;
 };

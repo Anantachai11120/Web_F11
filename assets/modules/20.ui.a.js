@@ -758,6 +758,7 @@ const renderRoomSlots = () => {
   }
 
   const bookings = roomBookingsBySelection(selection).filter((b) => b.status === "approved");
+  const staffMap = new Map(getResponsibleStaff().map((s) => [String(s.id || ""), s]));
   const pendingCount = roomBookingsBySelection(selection).filter((b) => b.status !== "approved").length;
   const dayBookings = load(storageKeys.roomBookings, []).filter(
     (b) => b.room === selection.room && b.date === selection.date
@@ -799,26 +800,41 @@ const renderRoomSlots = () => {
   if (detail) detail.textContent = t("roomHoverHint");
 
   let html = "";
+  const encodeAttr = (value) =>
+    String(value || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
   for (let i = 0; i < 20; i += 1) {
     if (i >= slots.length) {
-      html += `<div class="room-slot" data-slot-index="${i}" title="${t("roomSlotEmpty", { index: i + 1 })}"><img src="image/userG.png" alt="empty" /></div>`;
+      html += `<div class="room-slot" data-slot-index="${i}" data-icon="image/userG.png" data-alt="empty" title="${t("roomSlotEmpty", { index: i + 1 })}"><img src="image/userG.png" alt="empty" /></div>`;
       continue;
     }
     const mine = slots[i].mine;
     const b = slots[i].booking;
     const icon = mine ? "image/userGre.png" : "image/userR.png";
     const owner = b.requesterName || b.name || "-";
+    const responsible = staffMap.get(String(b.responsibleId || ""))?.name || "-";
     const title = mine
       ? t("roomSlotMineTitle", { index: i + 1, owner })
       : t("roomSlotOtherTitle", { index: i + 1, owner });
-    html += `<div class="room-slot" data-slot-index="${i}" title="${title}"><img src="${icon}" alt="${mine ? "mine" : "other"}" /></div>`;
+    html += `<div class="room-slot" data-slot-index="${i}" data-icon="${icon}" data-alt="${mine ? "mine" : "other"}" data-requester="${encodeAttr(owner)}" data-member1="${encodeAttr(b.member1 || "-")}" data-member2="${encodeAttr(b.member2 || "-")}" data-purpose="${encodeAttr(b.purpose || "-")}" data-responsible="${encodeAttr(responsible)}" title="${title}"><img src="${icon}" alt="${mine ? "mine" : "other"}" /></div>`;
   }
   grid.innerHTML = html;
+  if (typeof resetRoomSlotExpandState === "function") resetRoomSlotExpandState();
 };
 
 const setupRoomBookingUI = () => {
   const form = byId("roomBookingForm");
   const today = new Date().toISOString().slice(0, 10);
+  const pickDefaultTime = (selectId) => {
+    const select = byId(selectId);
+    if (!select || select.value) return;
+    const first = Array.from(select.options || []).find((opt) => String(opt.value || "").trim());
+    if (first) select.value = first.value;
+  };
   const syncInputValue = (fromId, toId) => {
     const from = byId(fromId);
     const to = byId(toId);
@@ -846,6 +862,7 @@ const setupRoomBookingUI = () => {
   if (!form) {
     const statusDate = byId("roomStatusDate");
     if (statusDate && !statusDate.value) statusDate.value = today;
+    pickDefaultTime("roomStatusTime");
     renderRoomSlots();
     return;
   }
@@ -862,9 +879,11 @@ const setupRoomBookingUI = () => {
   if (roomDate && roomStatusDate && roomDate.value !== roomStatusDate.value) {
     roomDate.value = roomStatusDate.value;
   }
+  pickDefaultTime("roomTime");
   if (byId("roomTime") && byId("roomStatusTime") && !byId("roomStatusTime").value) {
     syncInputValue("roomTime", "roomStatusTime");
   }
+  pickDefaultTime("roomStatusTime");
 
   byId("roomSlotsGrid")?.addEventListener("click", (e) => {
     const target = e.target;
@@ -875,6 +894,10 @@ const setupRoomBookingUI = () => {
     const detail = byId("roomSlotDetail");
     if (!detail) return;
     const entry = currentRoomSlotEntries[index];
+    if (typeof toggleRoomSlotExpand === "function") {
+      toggleRoomSlotExpand(slotEl, index, entry);
+      return;
+    }
     if (!entry) {
       detail.textContent = t("roomSlotEmptyDetail", { index: index + 1 });
       return;

@@ -335,10 +335,27 @@ const syncEquipmentEligibility = () => {
 const setupEquipmentBookingUI = () => {
   const form = byId("equipmentBookingForm");
   if (!form) return;
+
+  const eqListFilter = byId("eqListFilter");
+  const eqTypeFilter = byId("eqTypeFilter");
+  if (eqListFilter && !eqListFilter.dataset.bound) {
+    eqListFilter.dataset.bound = "1";
+    eqListFilter.addEventListener("change", () => {
+      renderEquipmentCatalog();
+    });
+  }
+  if (eqTypeFilter && !eqTypeFilter.dataset.bound) {
+    eqTypeFilter.dataset.bound = "1";
+    eqTypeFilter.addEventListener("change", () => {
+      renderEquipmentCatalog();
+    });
+  }
+
   const me = getCurrentUser();
   if (!me) {
     refreshEquipmentFilterLabels();
     renderEquipmentTypeFilterOptions();
+    syncEquipmentEligibility();
     renderEquipmentCatalog();
     setupEquipmentRulesPopup();
     return;
@@ -351,12 +368,6 @@ const setupEquipmentBookingUI = () => {
   if (byId("eqSelectedItemLabel")) byId("eqSelectedItemLabel").value = t("equipmentSelectDefault");
   refreshEquipmentFilterLabels();
   renderEquipmentTypeFilterOptions();
-  byId("eqListFilter")?.addEventListener("change", () => {
-    renderEquipmentCatalog();
-  });
-  byId("eqTypeFilter")?.addEventListener("change", () => {
-    renderEquipmentCatalog();
-  });
 
   byId("eqCatalogGrid")?.addEventListener("click", (e) => {
     const target = e.target;
