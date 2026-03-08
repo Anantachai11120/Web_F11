@@ -31,19 +31,23 @@ const getCurrentPage = () => {
 const isCurrentPage = (pageName) => getCurrentPage() === pageName;
 
 const defaultHomeInfo = {
-  orgName: "ชมรมกีฬา มหาวิทยาลัยเทคโนโลยีสุรนารี",
-  address: "มหาวิทยาลัยเทคโนโลยีสุรนารี 111 ถ.มหาวิทยาลัย ต.สุรนารี อ.เมืองนครราชสีมา 30000",
-  contactFacebook: "ชมรมกีฬา มทส.",
-  contactInstagram: "SUATHCTGI",
+  orgName: "\u0e41\u0e25\u0e1b\u0e0a\u0e31\u0e49\u0e19\u0e43\u0e15\u0e49\u0e14\u0e34\u0e19 F11 (Underground LAB F11)",
+  address:
+    "\u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e40\u0e17\u0e04\u0e42\u0e19\u0e42\u0e25\u0e22\u0e35\u0e2a\u0e38\u0e23\u0e19\u0e32\u0e23\u0e35 111 \u0e16.\u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22 \u0e15.\u0e2a\u0e38\u0e23\u0e19\u0e32\u0e23\u0e35 \u0e2d.\u0e40\u0e21\u0e37\u0e2d\u0e07\u0e19\u0e04\u0e23\u0e23\u0e32\u0e0a\u0e2a\u0e35\u0e21\u0e32 30000",
+  contactFacebook: "\u0e41\u0e25\u0e1b\u0e0a\u0e31\u0e49\u0e19\u0e43\u0e15\u0e49\u0e14\u0e34\u0e19 F11",
+  contactInstagram: "\u0e41\u0e25\u0e1b\u0e0a\u0e31\u0e49\u0e19\u0e43\u0e15\u0e49\u0e14\u0e34\u0e19 F11",
   contactPhone: "08 2571 3564",
-  units: ["ชมรมกีฬา มทส.", "สนามกีฬา", "สนามสุรพลกีฬาสถาน"],
-  visitorsTotal: 246,
-  visitorsToday: 17,
+  units: [
+    "\u0e2d\u0e32\u0e04\u0e32\u0e23\u0e2a\u0e34\u0e23\u0e34\u0e19\u0e18\u0e23\u0e27\u0e34\u0e27\u0e31\u0e12\u0e19\u0e4c (F11)",
+    "\u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e40\u0e17\u0e04\u0e42\u0e19\u0e42\u0e25\u0e22\u0e35\u0e2a\u0e38\u0e23\u0e19\u0e32\u0e23\u0e35",
+  ],
+  visitorsTotal: 256,
+  visitorsToday: 1,
   visitorsDate: new Date().toISOString().slice(0, 10),
   mapUrl:
-    "https://www.google.com/maps?q=Suranaree%20University%20of%20Technology&output=embed",
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d610.8910247070661!2d102.01582736648943!3d14.875732966597766!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311eada2dc228d57%3A0xfdb33a3a1db3b61!2zRjExIOC4reC4suC4hOC4suC4o-C4quC4tOC4o-C4tOC4meC4mOC4o-C4p-C4tOC4qOC4p-C4nuC4seC4kuC4meC5jCBTSVJJTkRIT1JOIFdJVFNBV0FQSEFUIEJVSUxESU5H!5e1!3m2!1sth!2sth!4v1772808962879!5m2!1sth!2sth",
   managerName: "Wave Anantachai",
-  managerRole: "นักกีฬา มทส.",
+  managerRole: "\u0e0a\u0e48\u0e32\u0e07\u0e01\u0e25\u0e42\u0e23\u0e07\u0e2a\u0e35",
   managerImage: "image/IconLab.png",
   managerVisible: true,
 };

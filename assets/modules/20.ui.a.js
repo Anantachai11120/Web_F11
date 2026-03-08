@@ -182,6 +182,7 @@ const renderAnnouncements = () => {
   }
   const visibleCount = Math.min(window[stateKey], announcements.length);
   const visible = announcements.slice(0, visibleCount);
+  target.classList.toggle("single-post", visible.length === 1);
 
   target.innerHTML = visible.length
     ? visible
