@@ -258,6 +258,25 @@
   width: auto;
   margin-top: 0.2rem;
 }
+.admin-export-actions {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+  flex-wrap: wrap;
+}
+.admin-export-filter {
+  margin-top: 0.2rem;
+}
+.admin-export-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+@media (max-width: 640px) {
+  .admin-export-range {
+    grid-template-columns: 1fr;
+  }
+}
 
 .password-input-wrap {
   position: relative;
@@ -636,4 +655,50 @@
   width: 34px;
   height: 34px;
   object-fit: contain;
+}
+
+.room-slot.expanded {
+  grid-column: span 2;
+  grid-row: span 2;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 0.55rem 0.6rem;
+  background: #f4fbff;
+  border-color: #8ebeca;
+  box-shadow: 0 10px 24px rgba(102, 141, 163, 0.22);
+  overflow: hidden;
+}
+
+.room-slot-expanded-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.3rem;
+}
+
+.room-slot-expanded-head img {
+  width: 24px;
+  height: 24px;
+}
+
+.room-slot-expanded-head strong {
+  color: #32485a;
+  font-size: 0.82rem;
+}
+
+.room-slot-expanded-body {
+  width: 100%;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.room-slot-expanded-body p {
+  margin: 0;
+  color: #4a6072;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

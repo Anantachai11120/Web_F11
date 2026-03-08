@@ -1,5 +1,5 @@
 (() => {
-  const version = "20260307-18";
+  const version = "20260308-01";
   const parts = [
     "/assets/modules/00.data.config.js",
     "/assets/modules/01.data.i18n.js",
@@ -11,8 +11,10 @@
     "/assets/modules/21.ui.b.js",
     "/assets/modules/22.ui.eq-booking.js",
     "/assets/modules/23.ui.c.js",
+    "/assets/modules/24.ui.room-slot-expand.js",
     "/assets/modules/30.api.a.js",
     "/assets/modules/31.api.b.js",
+    "/assets/modules/32.api.export.js",
     "/assets/modules/40.bootstrap.js",
   ];
 

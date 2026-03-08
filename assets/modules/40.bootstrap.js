@@ -2,6 +2,7 @@ const adminActions = () => {
   if (!isCurrentPage("admin.html")) return;
   if (!isAdminSession()) return;
   setupAdminSectionTabs();
+  setupAdminDataExport();
 
   const form = byId("announcementForm");
   const broadcastForm = byId("adminBroadcastForm");

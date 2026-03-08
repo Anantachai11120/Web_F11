@@ -45,6 +45,7 @@
             <button type="button" class="admin-tab-btn" data-admin-tab="responsibleStaff" data-i18n="adminTabResponsible">จัดการบุคลากรผู้รับผิดชอบแลป</button>
             <button type="button" class="admin-tab-btn" data-admin-tab="equipmentSummary" data-i18n="adminTabEquipmentSummary">สรุปการยืมอุปกรณ์</button>
             <button type="button" class="admin-tab-btn" data-admin-tab="emailNotify" data-i18n="adminTabEmailNotify">แจ้งเตือนทางอีเมล</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="dataExport" data-i18n="adminTabDataExport">ส่งออกข้อมูลสถิติ</button>
           </div>
         </article>
 
@@ -155,6 +156,49 @@
 
             <button type="submit" data-i18n="adminBroadcastSend">ส่งอีเมลแจ้งเตือน</button>
             <div id="adminBroadcastNotice" class="notice" hidden></div>
+          </form>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="dataExport" hidden>
+          <h2 data-i18n="adminTabDataExport">ส่งออกข้อมูลสถิติ</h2>
+          <p class="muted" data-i18n="adminExportHint">เลือกชุดข้อมูลที่ต้องการ และเลือกรูปแบบไฟล์เพื่อดาวน์โหลด</p>
+          <form id="adminDataExportForm">
+            <label for="adminExportDataset" data-i18n="adminExportDatasetLabel">ชุดข้อมูล</label>
+            <select id="adminExportDataset">
+              <option value="users" data-i18n="adminExportDatasetUsers">ผู้ใช้งาน</option>
+              <option value="roomBookings" data-i18n="adminExportDatasetRooms">การจองห้อง</option>
+              <option value="equipmentBookings" data-i18n="adminExportDatasetEquipment">การจองอุปกรณ์</option>
+            </select>
+            <label for="adminExportPeriodType" data-i18n="adminExportPeriodTypeLabel">ช่วงเวลา</label>
+            <select id="adminExportPeriodType">
+              <option value="all" data-i18n="adminExportPeriodAll">ทั้งหมด</option>
+              <option value="year" data-i18n="adminExportPeriodYear">ทั้งปี</option>
+              <option value="month" data-i18n="adminExportPeriodMonth">รายเดือน</option>
+              <option value="range" data-i18n="adminExportPeriodRange">ช่วงเดือน-ถึง-เดือน</option>
+            </select>
+            <div id="adminExportYearWrap" class="admin-export-filter" hidden>
+              <label for="adminExportYear" data-i18n="adminExportYearLabel">ปี</label>
+              <input id="adminExportYear" type="number" min="2000" max="2100" step="1" />
+            </div>
+            <div id="adminExportMonthWrap" class="admin-export-filter" hidden>
+              <label for="adminExportMonth" data-i18n="adminExportMonthLabel">เดือน</label>
+              <input id="adminExportMonth" type="month" />
+            </div>
+            <div id="adminExportRangeWrap" class="admin-export-filter admin-export-range" hidden>
+              <div>
+                <label for="adminExportFromMonth" data-i18n="adminExportFromMonthLabel">จากเดือน</label>
+                <input id="adminExportFromMonth" type="month" />
+              </div>
+              <div>
+                <label for="adminExportToMonth" data-i18n="adminExportToMonthLabel">ถึงเดือน</label>
+                <input id="adminExportToMonth" type="month" />
+              </div>
+            </div>
+            <div class="admin-export-actions">
+              <button type="submit" class="btn-small" data-export-format="csv" data-i18n="adminExportCsvBtn">ดาวน์โหลด CSV</button>
+              <button type="submit" class="btn-small" data-export-format="excel" data-i18n="adminExportExcelBtn">ดาวน์โหลด Excel</button>
+            </div>
+            <div id="adminDataExportNotice" class="notice" hidden></div>
           </form>
         </article>
       </section>

@@ -810,3 +810,49 @@ const i18n = {
   },
 };
 
+Object.assign(i18n.th, {
+  adminTabDataExport: "\u0e2a\u0e48\u0e07\u0e2d\u0e2d\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e2a\u0e16\u0e34\u0e15\u0e34",
+  adminExportHint:
+    "\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e0a\u0e38\u0e14\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25\u0e17\u0e35\u0e48\u0e15\u0e49\u0e2d\u0e07\u0e01\u0e32\u0e23 \u0e41\u0e25\u0e30\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e23\u0e39\u0e1b\u0e41\u0e1a\u0e1a\u0e44\u0e1f\u0e25\u0e4c\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e42\u0e2b\u0e25\u0e14",
+  adminExportDatasetLabel: "\u0e0a\u0e38\u0e14\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25",
+  adminExportDatasetUsers: "\u0e1c\u0e39\u0e49\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19",
+  adminExportDatasetRooms: "\u0e01\u0e32\u0e23\u0e08\u0e2d\u0e07\u0e2b\u0e49\u0e2d\u0e07",
+  adminExportDatasetEquipment: "\u0e01\u0e32\u0e23\u0e08\u0e2d\u0e07\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c",
+  adminExportPeriodTypeLabel: "\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32",
+  adminExportPeriodAll: "\u0e17\u0e31\u0e49\u0e07\u0e2b\u0e21\u0e14",
+  adminExportPeriodYear: "\u0e17\u0e31\u0e49\u0e07\u0e1b\u0e35",
+  adminExportPeriodMonth: "\u0e23\u0e32\u0e22\u0e40\u0e14\u0e37\u0e2d\u0e19",
+  adminExportPeriodRange: "\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e14\u0e37\u0e2d\u0e19-\u0e16\u0e36\u0e07-\u0e40\u0e14\u0e37\u0e2d\u0e19",
+  adminExportYearLabel: "\u0e1b\u0e35",
+  adminExportMonthLabel: "\u0e40\u0e14\u0e37\u0e2d\u0e19",
+  adminExportFromMonthLabel: "\u0e08\u0e32\u0e01\u0e40\u0e14\u0e37\u0e2d\u0e19",
+  adminExportToMonthLabel: "\u0e16\u0e36\u0e07\u0e40\u0e14\u0e37\u0e2d\u0e19",
+  adminExportPeriodInvalid:
+    "\u0e01\u0e23\u0e38\u0e13\u0e32\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32\u0e43\u0e2b\u0e49\u0e16\u0e39\u0e01\u0e15\u0e49\u0e2d\u0e07",
+  adminExportCsvBtn: "\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e42\u0e2b\u0e25\u0e14 CSV",
+  adminExportExcelBtn: "\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e42\u0e2b\u0e25\u0e14 Excel",
+  adminExportDone:
+    "\u0e2a\u0e48\u0e07\u0e2d\u0e2d\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25 {{format}} \u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22 ({{count}} \u0e23\u0e32\u0e22\u0e01\u0e32\u0e23)",
+});
+
+Object.assign(i18n.en, {
+  adminTabDataExport: "Data Export",
+  adminExportHint: "Select the dataset and file format to download for statistics.",
+  adminExportDatasetLabel: "Dataset",
+  adminExportDatasetUsers: "Users",
+  adminExportDatasetRooms: "Room Bookings",
+  adminExportDatasetEquipment: "Equipment Bookings",
+  adminExportPeriodTypeLabel: "Period",
+  adminExportPeriodAll: "All",
+  adminExportPeriodYear: "Full Year",
+  adminExportPeriodMonth: "By Month",
+  adminExportPeriodRange: "Month Range",
+  adminExportYearLabel: "Year",
+  adminExportMonthLabel: "Month",
+  adminExportFromMonthLabel: "From Month",
+  adminExportToMonthLabel: "To Month",
+  adminExportPeriodInvalid: "Please select a valid period filter.",
+  adminExportCsvBtn: "Download CSV",
+  adminExportExcelBtn: "Download Excel",
+  adminExportDone: "Exported {{format}} successfully ({{count}} rows)",
+});
