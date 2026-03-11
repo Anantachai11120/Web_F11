@@ -275,8 +275,6 @@ const adminActions = () => {
 };
 
 const bootstrapApp = async () => {
-  const sharedSyncPromise = initSharedStorage();
-
   setupClientHardening();
   applyTranslations();
   setupLanguageSelector();
@@ -288,6 +286,8 @@ const bootstrapApp = async () => {
   setupAuthNav();
   setupAdminNav();
   document.documentElement.classList.add("i18n-ready");
+
+  const sharedChanged = await initSharedStorage();
 
   seedAdmin();
   seedHomeInfo();
@@ -367,29 +367,27 @@ const bootstrapApp = async () => {
     });
   }, 15000);
 
-  sharedSyncPromise.then((changed) => {
-    if (!changed) return;
-    normalizeUsers();
-    updateNavAuthState();
-    setupAuthNav();
-    setupAdminNav();
-    renderDashboard();
-    renderAnnouncements();
-    renderHomeBottomInfo();
-    renderProfilePage();
-    renderRoomSlots();
-    renderRoomApproval();
-    renderResponsibleOptions();
-    renderEqResponsibleOptions();
-    renderEquipmentCatalog();
-    renderSelectedEquipmentList();
-    renderAdminUsers();
-    renderAdminUserProfilePanel();
-    renderAdminEquipmentBorrowSummary();
-    renderBroadcastRecipientList();
-    renderAdminAnnouncements();
-    renderResponsibleAdminList();
-  });
+  if (!sharedChanged) return;
+  normalizeUsers();
+  updateNavAuthState();
+  setupAuthNav();
+  setupAdminNav();
+  renderDashboard();
+  renderAnnouncements();
+  renderHomeBottomInfo();
+  renderProfilePage();
+  renderRoomSlots();
+  renderRoomApproval();
+  renderResponsibleOptions();
+  renderEqResponsibleOptions();
+  renderEquipmentCatalog();
+  renderSelectedEquipmentList();
+  renderAdminUsers();
+  renderAdminUserProfilePanel();
+  renderAdminEquipmentBorrowSummary();
+  renderBroadcastRecipientList();
+  renderAdminAnnouncements();
+  renderResponsibleAdminList();
 };
 
 bootstrapApp();

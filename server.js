@@ -13,6 +13,7 @@ const dataDir = path.join(__dirname, 'data');
 const approvalsPath = path.join(dataDir, 'booking-approvals.json');
 const equipmentReturnsPath = path.join(dataDir, 'equipment-returns.json');
 const sharedStatePath = path.join(dataDir, 'shared-state.json');
+const sharedStateBackupPath = path.join(dataDir, 'shared-state.backup.json');
 const nextWorkDir = path.join(dataDir, 'next-work');
 const traceFallbackDir = path.join(nextWorkDir, 'runtime-trace');
 const sharedStateKeys = new Set([
@@ -290,13 +291,32 @@ const ensureSharedStateStore = () => {
 
 const readSharedState = () => {
   ensureSharedStateStore();
+  const parseItems = (raw) => {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    const items = parsed.items;
+    if (!items || typeof items !== 'object' || Array.isArray(items)) return null;
+    return items;
+  };
   try {
     const raw = fs.readFileSync(sharedStatePath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-    const items = parsed.items;
-    if (!items || typeof items !== 'object' || Array.isArray(items)) return {};
-    return items;
+    const items = parseItems(raw);
+    if (items && Object.keys(items).length) return items;
+  } catch {
+    // try backup file
+  }
+  try {
+    if (!fs.existsSync(sharedStateBackupPath)) return {};
+    const rawBackup = fs.readFileSync(sharedStateBackupPath, 'utf8');
+    const backupItems = parseItems(rawBackup);
+    if (!backupItems) return {};
+    // auto-heal main file from backup when current file is invalid/empty.
+    try {
+      fs.writeFileSync(sharedStatePath, JSON.stringify({ items: backupItems }, null, 2), 'utf8');
+    } catch {
+      // ignore heal write error
+    }
+    return backupItems;
   } catch {
     return {};
   }
@@ -304,6 +324,13 @@ const readSharedState = () => {
 
 const writeSharedState = (items) => {
   ensureSharedStateStore();
+  try {
+    if (fs.existsSync(sharedStatePath)) {
+      fs.copyFileSync(sharedStatePath, sharedStateBackupPath);
+    }
+  } catch {
+    // keep writing main file even if backup copy fails
+  }
   fs.writeFileSync(sharedStatePath, JSON.stringify({ items }, null, 2), 'utf8');
 };
 

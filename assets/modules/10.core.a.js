@@ -90,6 +90,7 @@ const sharedStorageKeys = new Set([
 
 const sharedSyncState = {
   ready: false,
+  hydrated: false,
   queue: {},
   timer: null,
 };
@@ -114,6 +115,7 @@ const queueSharedSync = (key, value) => {
   if (!sharedStorageKeys.has(key)) return;
   sharedSyncState.queue[key] = value;
   if (!sharedSyncState.ready) return;
+  if (!sharedSyncState.hydrated) return;
   if (sharedSyncState.timer) return;
   sharedSyncState.timer = setTimeout(pushSharedStateToServer, 350);
 };
@@ -121,14 +123,26 @@ const queueSharedSync = (key, value) => {
 const initSharedStorage = async () => {
   if (sharedSyncState.ready) return false;
   let changed = false;
+  let loadedFromServer = false;
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 1200);
-    const res = await fetch("/api/shared-state", {
-      cache: "no-store",
-      signal: controller.signal,
-    }).finally(() => clearTimeout(timer));
-    if (res.ok) {
+    let res = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      try {
+        res = await fetch("/api/shared-state", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (res.ok) break;
+      } catch {
+        // retry
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    if (res && res.ok) {
+      loadedFromServer = true;
       const body = await res.json().catch(() => ({}));
       const items = body && typeof body.items === "object" ? body.items : {};
       sharedStorageKeys.forEach((key) => {
@@ -156,7 +170,8 @@ const initSharedStorage = async () => {
     // Use localStorage fallback when shared API is unavailable.
   } finally {
     sharedSyncState.ready = true;
-    if (Object.keys(sharedSyncState.queue).length) {
+    sharedSyncState.hydrated = loadedFromServer;
+    if (sharedSyncState.hydrated && Object.keys(sharedSyncState.queue).length) {
       if (sharedSyncState.timer) clearTimeout(sharedSyncState.timer);
       sharedSyncState.timer = setTimeout(pushSharedStateToServer, 0);
     }
