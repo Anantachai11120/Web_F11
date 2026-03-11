@@ -207,6 +207,8 @@
   padding: 0.55rem;
   cursor: pointer;
   background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
   transition: border-color 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease, transform 0.22s ease, background-color 0.22s ease;
 }
 
@@ -415,6 +417,21 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.65rem;
+}
+
+.equipment-card-top {
+  display: flex;
+  justify-content: flex-end;
+  order: 99;
+  margin-top: auto;
+  margin-bottom: 0;
+  padding-top: 0.35rem;
+}
+
+.equipment-guide-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.2;
 }
 .announcement-grid.single-post {
   grid-template-columns: 1fr;

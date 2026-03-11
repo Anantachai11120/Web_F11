@@ -126,6 +126,8 @@
         <form id="equipmentAdminForm">
           <label for="eqAdminName" data-i18n="equipmentNameLabel">ชื่ออุปกรณ์</label>
           <input id="eqAdminName" type="text" data-i18n-placeholder="equipmentNamePlaceholder" placeholder="เช่น กล้องจุลทรรศน์" />
+          <label for="eqAdminNameEn" data-i18n="equipmentNameEnLabel">ชื่ออุปกรณ์ (อังกฤษ)</label>
+          <input id="eqAdminNameEn" type="text" data-i18n-placeholder="equipmentNameEnPlaceholder" placeholder="e.g. Microscope" />
           <label for="eqAdminType" data-i18n="equipmentTypeLabel">ชนิดอุปกรณ์</label>
           <select id="eqAdminType"></select>
           <label for="eqAdminNewType" data-i18n="addEquipmentTypeLabel">เพิ่มชนิดอุปกรณ์ใหม่</label>
@@ -135,6 +137,8 @@
           </div>
           <label for="eqAdminStock" data-i18n="totalStockLabel">จำนวนทั้งหมด</label>
           <input id="eqAdminStock" type="number" min="1" value="1" />
+          <label for="eqAdminUsage" data-i18n="equipmentUsageLabel">รายละเอียดการใช้งาน</label>
+          <textarea id="eqAdminUsage" data-i18n-placeholder="equipmentUsagePlaceholder" placeholder="เช่น เหมาะกับการวัดสัญญาณวงจรไฟฟ้าความถี่ต่ำถึงกลาง"></textarea>
 
           <label for="eqAdminImage" data-i18n="equipmentImageLabel">รูปอุปกรณ์</label>
           <input id="eqAdminImage" type="file" accept="image/*" />
@@ -189,6 +193,17 @@
       <div class="inline-actions" style="margin-top:0.8rem;">
         <button id="equipmentReturnConfirmBtn" type="button" data-i18n="equipmentReturnSubmitBtn">คืนอุปกรณ์</button>
         <button id="equipmentReturnCancelBtn" type="button" class="btn-small danger" data-i18n="adminQuotaCancelBtn">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="equipmentGuideModal" class="rules-modal-backdrop" hidden>
+    <div class="rules-modal">
+      <h3 id="equipmentGuideTitle" data-i18n="equipmentUsageModalTitle">วิธีการใช้งานอุปกรณ์</h3>
+      <p id="equipmentGuideType" class="muted"></p>
+      <p id="equipmentGuideContent" class="muted"></p>
+      <div class="inline-actions" style="margin-top:0.8rem;">
+        <button id="equipmentGuideCloseBtn" type="button" data-i18n="closeBtn">ปิด</button>
       </div>
     </div>
   </div>

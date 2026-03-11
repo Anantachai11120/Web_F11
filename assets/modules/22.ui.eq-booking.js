@@ -8,11 +8,46 @@ const normalizeEquipmentItems = () =>
   getEquipmentItems().map((it, idx) => ({
     id: it.id || `eq-${idx + 1}`,
     name: it.name || `Item ${idx + 1}`,
+    nameEn: String(it.nameEn || "").trim(),
     image: it.image || "image/IconLab.png",
     stock: Math.max(1, Number(it.stock || 1)),
     type: it.type || "ทั่วไป",
+    usageGuide: String(it.usageGuide || "").trim(),
   }));
 
+const equipmentNameByLang = (item, fallback = "-") => {
+  if (!item) return fallback;
+  const th = String(item.name || "").trim();
+  const en = String(item.nameEn || "").trim();
+  if (getLang() === "en") return en || th || fallback;
+  return th || en || fallback;
+};
+const openEquipmentGuideModal = (item) => {
+  const modal = byId("equipmentGuideModal");
+  const title = byId("equipmentGuideTitle");
+  const typeText = byId("equipmentGuideType");
+  const content = byId("equipmentGuideContent");
+  const closeBtn = byId("equipmentGuideCloseBtn");
+  if (!modal || !title || !typeText || !content || !closeBtn || !item) return;
+
+  title.textContent = `${t("equipmentUsageModalTitle")} - ${equipmentNameByLang(item, "-")}`;
+  typeText.textContent = t("equipmentUsageTypeText", { type: item.type || "-" });
+  content.textContent = item.usageGuide || t("equipmentUsageEmpty");
+  modal.hidden = false;
+  document.body.classList.add("no-scroll");
+
+  const closeModal = () => {
+    modal.hidden = true;
+    document.body.classList.remove("no-scroll");
+    closeBtn.removeEventListener("click", closeModal);
+    modal.removeEventListener("click", onBackdropClick);
+  };
+  const onBackdropClick = (e) => {
+    if (e.target === modal) closeModal();
+  };
+  closeBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", onBackdropClick);
+};
 const renderEquipmentTypeFilterOptions = () => {
   const select = byId("eqTypeFilter");
   if (!select) return;
@@ -36,7 +71,7 @@ const refreshEquipmentFilterLabels = () => {
 const getBorrowedQtyByItemId = (itemId) => {
   const item = normalizeEquipmentItems().find((x) => x.id === itemId);
   return load(storageKeys.equipmentBookings, [])
-    .filter((b) => b.itemId === itemId || (!b.itemId && item && b.item === item.name))
+    .filter((b) => b.itemId === itemId || (!b.itemId && item && (b.item === item.name || b.item === item.nameEn)))
     .filter((b) => (b.returnStatus || "borrowed") !== "returned")
     .reduce((sum, b) => sum + Math.max(1, Number(b.quantity || 1)), 0);
 };
@@ -49,7 +84,13 @@ const getAvailableQtyByItemId = (itemId) => {
 
 const buildEquipmentBorrowStats = (items, bookings) => {
   const byId = new Map();
-  const idByName = new Map(items.map((it) => [String(it.name || ""), String(it.id || "")]));
+  const idByName = new Map();
+  items.forEach((it) => {
+    const nameTh = String(it.name || "");
+    const nameEn = String(it.nameEn || "");
+    if (nameTh) idByName.set(nameTh, String(it.id || ""));
+    if (nameEn) idByName.set(nameEn, String(it.id || ""));
+  });
   bookings.forEach((b) => {
     if ((b.returnStatus || "borrowed") === "returned") return;
     const bookingItemId = String(b.itemId || "");
@@ -82,7 +123,7 @@ const renderSelectedEquipmentList = () => {
     .map(
       (entry, index) => `<div class="admin-item">
       <div>
-        <p><strong>${entry.name}</strong></p>
+        <p><strong>${getLang() === "en" ? (entry.nameEn || entry.name) : (entry.name || entry.nameEn || "-")}</strong></p>
         <p class="muted">${t("quantityLabel")}: <input type="number" min="1" value="${entry.quantity}" data-eq-selected-qty="${index}" style="width:84px;" /></p>
       </div>
       <div class="feed-actions-end inline-actions">
@@ -132,8 +173,11 @@ const renderEquipmentCatalog = () => {
           selectedEquipmentItemId === item.id ||
           selectedEquipmentEntries.some((entry) => entry.itemId === item.id);
         return `<div class="equipment-card ${exhausted ? "exhausted" : ""} ${active ? "active" : ""}" data-eq-item-id="${item.id}">
-          <img src="${item.image}" alt="${item.name}" />
-          <p><strong>${item.name}</strong></p>
+          <div class="equipment-card-top">
+            <button type="button" class="btn-small equipment-guide-btn" data-eq-guide="${item.id}">${t("equipmentGuideBtn")}</button>
+          </div>
+          <img src="${item.image}" alt="${equipmentNameByLang(item, item.name)}" />
+          <p><strong>${equipmentNameByLang(item, item.name)}</strong></p>
           <p class="muted">${t("equipmentTypeLabel")}: ${item.type || "ทั่วไป"}</p>
           <p class="muted">${t("equipmentBookedLabel")}: ${borrowed}</p>
           <p class="muted">${exhausted ? t("equipmentEmptyLabel") : t("equipmentLeftLabel", { available, stock: item.stock })}</p>
@@ -153,7 +197,7 @@ const renderEquipmentCatalog = () => {
     const active = load(storageKeys.equipmentBookings, [])
       .filter((b) => (b.returnStatus || "borrowed") !== "returned")
       .filter((b) => {
-        const item = items.find((x) => x.id === b.itemId || (!b.itemId && x.name === b.item));
+        const item = items.find((x) => x.id === b.itemId || (!b.itemId && (x.name === b.item || x.nameEn === b.item)));
         const itemType = item?.type || "ทั่วไป";
         return selectedType === "all" || itemType === selectedType;
       });
@@ -174,10 +218,13 @@ const renderEquipmentCatalog = () => {
     grid.innerHTML = rows.length
       ? rows
           .map((r) => {
-            const item = items.find((x) => x.id === r.itemId || x.name === r.item);
+            const item = items.find((x) => x.id === r.itemId || x.name === r.item || x.nameEn === r.item);
             return `<div class="equipment-card">
+              <div class="equipment-card-top">
+                <button type="button" class="btn-small equipment-guide-btn" data-eq-guide="${item?.id || ""}">${t("equipmentGuideBtn")}</button>
+              </div>
               <img src="${item?.image || "image/IconLab.png"}" alt="${r.item}" />
-              <p><strong>${r.item}</strong></p>
+              <p><strong>${equipmentNameByLang(item, r.item)}</strong></p>
               <p class="muted">${t("equipmentBookedLabel")}: ${r.quantity}</p>
               <p class="muted">${t("profileUsageDate")}: ${r.latestDate || "-"}</p>
             </div>`;
@@ -190,7 +237,7 @@ const renderEquipmentCatalog = () => {
 
   if (returnAllBtn) returnAllBtn.hidden = false;
   const bookings = getMyActiveEquipmentBookings(me).filter((b) => {
-    const item = items.find((x) => x.id === b.itemId || (!b.itemId && x.name === b.item));
+    const item = items.find((x) => x.id === b.itemId || (!b.itemId && (x.name === b.item || x.nameEn === b.item)));
     const itemType = item?.type || "ทั่วไป";
     return selectedType === "all" || itemType === selectedType;
   });
@@ -199,8 +246,11 @@ const renderEquipmentCatalog = () => {
         .map((b) => {
           const item = items.find((x) => x.id === b.itemId);
           return `<div class="equipment-card">
-            <img src="${item?.image || "image/IconLab.png"}" alt="${b.item}" />
-            <p><strong>${b.item}</strong> x ${b.quantity}</p>
+            <div class="equipment-card-top">
+              <button type="button" class="btn-small equipment-guide-btn" data-eq-guide="${item?.id || ""}">${t("equipmentGuideBtn")}</button>
+            </div>
+            <img src="${item?.image || "image/IconLab.png"}" alt="${equipmentNameByLang(item, b.item)}" />
+            <p><strong>${equipmentNameByLang(item, b.item)}</strong> x ${b.quantity}</p>
             <p class="muted">${b.date} | ${b.timeSlot || "-"}</p>
             <p class="muted">สถานะ: ${equipmentReturnStatusLabel(b.returnStatus || "borrowed")}</p>
             ${
@@ -335,6 +385,7 @@ const syncEquipmentEligibility = () => {
 const setupEquipmentBookingUI = () => {
   const form = byId("equipmentBookingForm");
   if (!form) return;
+  const catalogGrid = byId("eqCatalogGrid");
 
   const eqListFilter = byId("eqListFilter");
   const eqTypeFilter = byId("eqTypeFilter");
@@ -347,6 +398,34 @@ const setupEquipmentBookingUI = () => {
   if (eqTypeFilter && !eqTypeFilter.dataset.bound) {
     eqTypeFilter.dataset.bound = "1";
     eqTypeFilter.addEventListener("change", () => {
+      renderEquipmentCatalog();
+    });
+  }
+  if (catalogGrid && !catalogGrid.dataset.bound) {
+    catalogGrid.dataset.bound = "1";
+    catalogGrid.addEventListener("click", (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const guideBtn = target.closest("[data-eq-guide]");
+      if (guideBtn instanceof HTMLElement) {
+        const itemId = String(guideBtn.dataset.eqGuide || "");
+        const item = normalizeEquipmentItems().find((x) => x.id === itemId);
+        if (item) openEquipmentGuideModal(item);
+        return;
+      }
+      const itemCard = target.closest("[data-eq-item-id]");
+      if (!(itemCard instanceof HTMLElement)) return;
+      const mode = byId("eqListFilter")?.value || "all";
+      if (!(mode === "all" || mode === "available")) return;
+      const itemId = itemCard.dataset.eqItemId || "";
+      const available = getAvailableQtyByItemId(itemId);
+      const canPickEquipment = Boolean(byId("eqTime")?.value);
+      if (!canPickEquipment || available <= 0) return;
+      const item = normalizeEquipmentItems().find((x) => x.id === itemId);
+      selectedEquipmentItemId = itemId;
+      byId("eqSelectedItemLabel").value = item
+        ? `${equipmentNameByLang(item, item.name)} (${t("equipmentLeftLabel", { available, stock: item.stock })})`
+        : t("equipmentSelectDefault");
       renderEquipmentCatalog();
     });
   }
@@ -368,26 +447,6 @@ const setupEquipmentBookingUI = () => {
   if (byId("eqSelectedItemLabel")) byId("eqSelectedItemLabel").value = t("equipmentSelectDefault");
   refreshEquipmentFilterLabels();
   renderEquipmentTypeFilterOptions();
-
-  byId("eqCatalogGrid")?.addEventListener("click", (e) => {
-    const target = e.target;
-    if (!(target instanceof HTMLElement)) return;
-    const itemCard = target.closest("[data-eq-item-id]");
-
-    if (itemCard instanceof HTMLElement) {
-      const mode = byId("eqListFilter")?.value || "all";
-      if (!(mode === "all" || mode === "available")) return;
-      const itemId = itemCard.dataset.eqItemId || "";
-      const available = getAvailableQtyByItemId(itemId);
-      const canPickEquipment = Boolean(byId("eqTime")?.value);
-      if (!canPickEquipment || available <= 0) return;
-      const item = normalizeEquipmentItems().find((x) => x.id === itemId);
-      selectedEquipmentItemId = itemId;
-      byId("eqSelectedItemLabel").value = item ? `${item.name} (${t("equipmentLeftLabel", { available, stock: item.stock })})` : t("equipmentSelectDefault");
-      renderEquipmentCatalog();
-      return;
-    }
-  });
 
   byId("eqAddToSelectionBtn")?.addEventListener("click", () => {
     const notice = byId("equipmentNotice");
@@ -421,6 +480,7 @@ const setupEquipmentBookingUI = () => {
     selectedEquipmentEntries.push({
       itemId: item.id,
       name: item.name,
+      nameEn: item.nameEn || "",
       quantity: 1,
     });
     renderSelectedEquipmentList();
@@ -554,3 +614,7 @@ const setupEquipmentBookingUI = () => {
   byId("eqTime")?.addEventListener("change", syncEquipmentEligibility);
   syncEquipmentEligibility();
 };
+
+
+
+

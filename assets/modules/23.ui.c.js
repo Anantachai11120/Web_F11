@@ -210,8 +210,9 @@ const renderEquipmentAdminList = () => {
             <div style="display:flex;gap:0.6rem;align-items:center;${getAvailableQtyByItemId(item.id) <= 0 ? "opacity:0.5;" : ""}">
               <img src="${item.image || "image/IconLab.png"}" alt="${item.name}" style="width:62px;height:62px;border-radius:10px;object-fit:cover;border:1px solid #cadce3;" />
               <div>
-                <p><strong>${item.name}</strong></p>
+                <p><strong>${item.name}</strong>${item.nameEn ? ` <span class="muted">/ ${item.nameEn}</span>` : ""}</p>
                 <p class="muted">${t("equipmentTypeLabel")}: ${item.type || "ทั่วไป"}</p>
+                <p class="muted">${item.usageGuide ? item.usageGuide : t("equipmentUsageEmpty")}</p>
                 <p class="muted">คงเหลือ ${getAvailableQtyByItemId(item.id)}/${item.stock} ${getAvailableQtyByItemId(item.id) <= 0 ? "(หมด)" : ""}</p>
               </div>
             </div>
@@ -286,8 +287,10 @@ const setupEquipmentAdminTools = () => {
     if (!requireAdminAction()) return;
     const notice = byId("equipmentAdminNotice");
     const name = byId("eqAdminName")?.value?.trim() || "";
+    const nameEn = byId("eqAdminNameEn")?.value?.trim() || "";
     const stock = Math.max(1, Number(byId("eqAdminStock")?.value || 1));
     const type = byId("eqAdminType")?.value?.trim() || "ทั่วไป";
+    const usageGuide = byId("eqAdminUsage")?.value?.trim() || "";
     if (!name) {
       setNotice(notice, t("fillAll"), "error");
       return;
@@ -301,14 +304,16 @@ const setupEquipmentAdminTools = () => {
     }
     if (editingEquipmentId) {
       const index = list.findIndex((i) => i.id === editingEquipmentId);
-      if (index >= 0) list[index] = { ...list[index], name, image, stock, type };
+      if (index >= 0) list[index] = { ...list[index], name, nameEn, image, stock, type, usageGuide };
     } else {
       list.push({
         id: `eq-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         name,
+        nameEn,
         image,
         stock,
         type,
+        usageGuide,
       });
     }
     save(storageKeys.equipmentItems, list);
@@ -338,7 +343,9 @@ const setupEquipmentAdminTools = () => {
       if (!item) return;
       editingEquipmentId = item.id;
       byId("eqAdminName").value = item.name || "";
+      if (byId("eqAdminNameEn")) byId("eqAdminNameEn").value = item.nameEn || "";
       byId("eqAdminStock").value = String(item.stock || 1);
+      if (byId("eqAdminUsage")) byId("eqAdminUsage").value = item.usageGuide || "";
       renderEquipmentTypeOptions(item.type || "ทั่วไป");
       equipmentCropState.croppedDataUrl = item.image || "";
       const img = new Image();
@@ -368,3 +375,5 @@ const setupEquipmentAdminTools = () => {
     }
   });
 };
+
+
