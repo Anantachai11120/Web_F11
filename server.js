@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const next = require('next');
 const nodemailer = require('nodemailer');
+const mysql = require('mysql2/promise');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -25,8 +26,119 @@ const sharedStateKeys = new Set([
   'lab_announcements',
   'lab_home_info',
   'lab_responsible_staff',
+  'lab_room_closures',
   'lab_notifications',
 ]);
+const dbEnabled = Boolean(process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME);
+let dbPool = null;
+const DB_KEYS = {
+  approvals: 'booking_approvals',
+  equipmentReturns: 'equipment_returns',
+  sharedState: 'shared_state',
+};
+
+const getDbPool = () => dbPool;
+
+const initDb = async () => {
+  if (!dbEnabled) return false;
+  dbPool = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS || '',
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: Number(process.env.DB_POOL_SIZE || 10),
+    queueLimit: 0,
+    charset: 'utf8mb4',
+  });
+  const conn = await dbPool.getConnection();
+  try {
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS app_kv (
+        k VARCHAR(128) NOT NULL PRIMARY KEY,
+        v LONGTEXT NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  } finally {
+    conn.release();
+  }
+  return true;
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const initDbWithRetry = async (attempts = 20, delayMs = 1500) => {
+  let lastErr = null;
+  for (let i = 1; i <= attempts; i += 1) {
+    try {
+      await initDb();
+      return true;
+    } catch (err) {
+      lastErr = err;
+      console.warn(`MySQL connect attempt ${i}/${attempts} failed: ${err.message || err}`);
+      await sleep(delayMs);
+    }
+  }
+  throw lastErr || new Error('db_connect_failed');
+};
+
+const dbReadJson = async (key, fallbackValue) => {
+  if (!dbEnabled || !getDbPool()) return null;
+  try {
+    const [rows] = await getDbPool().query('SELECT v FROM app_kv WHERE k = ? LIMIT 1', [key]);
+    if (!rows.length) return null;
+    const parsed = JSON.parse(String(rows[0].v || 'null'));
+    return parsed ?? fallbackValue;
+  } catch {
+    return null;
+  }
+};
+
+const dbWriteJson = async (key, value) => {
+  if (!dbEnabled || !getDbPool()) return false;
+  try {
+    await getDbPool().query(
+      'INSERT INTO app_kv (k, v) VALUES (?, ?) ON DUPLICATE KEY UPDATE v = VALUES(v), updated_at = CURRENT_TIMESTAMP',
+      [key, JSON.stringify(value)]
+    );
+    return true;
+  } catch (err) {
+    console.error('dbWriteJson error:', err.message || err);
+    return false;
+  }
+};
+
+const migrateFileDataToDbIfNeeded = async () => {
+  if (!dbEnabled || !getDbPool()) return;
+
+  const migrateOne = async (dbKey, filePath, pickItems) => {
+    const existing = await dbReadJson(dbKey, null);
+    if (existing !== null) return;
+    try {
+      if (!fs.existsSync(filePath)) return;
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const parsed = JSON.parse(raw);
+      const payload = pickItems(parsed);
+      await dbWriteJson(dbKey, payload);
+    } catch {
+      // skip invalid legacy file
+    }
+  };
+
+  await migrateOne(DB_KEYS.approvals, approvalsPath, (parsed) => (Array.isArray(parsed?.items) ? parsed.items : []));
+  await migrateOne(
+    DB_KEYS.equipmentReturns,
+    equipmentReturnsPath,
+    (parsed) => (Array.isArray(parsed?.items) ? parsed.items : [])
+  );
+  await migrateOne(
+    DB_KEYS.sharedState,
+    sharedStatePath,
+    (parsed) => (parsed && typeof parsed.items === 'object' && !Array.isArray(parsed.items) ? parsed.items : {})
+  );
+};
 
 const nativeCreateWriteStream = fs.createWriteStream.bind(fs);
 fs.createWriteStream = (targetPath, ...args) => {
@@ -250,34 +362,44 @@ const ensureEquipmentReturnsStore = () => {
   }
 };
 
-const readApprovals = () => {
+const readApprovals = async () => {
+  const dbItems = await dbReadJson(DB_KEYS.approvals, []);
+  if (Array.isArray(dbItems)) return dbItems;
   ensureApprovalsStore();
   try {
     const raw = fs.readFileSync(approvalsPath, 'utf8');
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed.items) ? parsed.items : [];
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
+    await dbWriteJson(DB_KEYS.approvals, items);
+    return items;
   } catch {
     return [];
   }
 };
 
-const writeApprovals = (items) => {
+const writeApprovals = async (items) => {
+  await dbWriteJson(DB_KEYS.approvals, items);
   ensureApprovalsStore();
   fs.writeFileSync(approvalsPath, JSON.stringify({ items }, null, 2), 'utf8');
 };
 
-const readEquipmentReturns = () => {
+const readEquipmentReturns = async () => {
+  const dbItems = await dbReadJson(DB_KEYS.equipmentReturns, []);
+  if (Array.isArray(dbItems)) return dbItems;
   ensureEquipmentReturnsStore();
   try {
     const raw = fs.readFileSync(equipmentReturnsPath, 'utf8');
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed.items) ? parsed.items : [];
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
+    await dbWriteJson(DB_KEYS.equipmentReturns, items);
+    return items;
   } catch {
     return [];
   }
 };
 
-const writeEquipmentReturns = (items) => {
+const writeEquipmentReturns = async (items) => {
+  await dbWriteJson(DB_KEYS.equipmentReturns, items);
   ensureEquipmentReturnsStore();
   fs.writeFileSync(equipmentReturnsPath, JSON.stringify({ items }, null, 2), 'utf8');
 };
@@ -289,7 +411,9 @@ const ensureSharedStateStore = () => {
   }
 };
 
-const readSharedState = () => {
+const readSharedState = async () => {
+  const dbItems = await dbReadJson(DB_KEYS.sharedState, {});
+  if (dbItems && typeof dbItems === 'object' && !Array.isArray(dbItems)) return dbItems;
   ensureSharedStateStore();
   const parseItems = (raw) => {
     const parsed = JSON.parse(raw);
@@ -316,13 +440,15 @@ const readSharedState = () => {
     } catch {
       // ignore heal write error
     }
+    await dbWriteJson(DB_KEYS.sharedState, backupItems);
     return backupItems;
   } catch {
     return {};
   }
 };
 
-const writeSharedState = (items) => {
+const writeSharedState = async (items) => {
+  await dbWriteJson(DB_KEYS.sharedState, items);
   ensureSharedStateStore();
   try {
     if (fs.existsSync(sharedStatePath)) {
@@ -334,33 +460,33 @@ const writeSharedState = (items) => {
   fs.writeFileSync(sharedStatePath, JSON.stringify({ items }, null, 2), 'utf8');
 };
 
-const upsertPendingRequest = (payload) => {
-  const items = readApprovals();
+const upsertPendingRequest = async (payload) => {
+  const items = await readApprovals();
   const index = items.findIndex((i) => i.bookingId === payload.bookingId);
   if (index >= 0) {
     items[index] = { ...items[index], ...payload };
   } else {
     items.push(payload);
   }
-  writeApprovals(items);
+  await writeApprovals(items);
 };
 
 const getConfirmToken = () => crypto.randomBytes(24).toString('hex');
 
-const upsertEquipmentReturnRequest = (payload) => {
-  const items = readEquipmentReturns();
+const upsertEquipmentReturnRequest = async (payload) => {
+  const items = await readEquipmentReturns();
   const index = items.findIndex((i) => i.bookingId === payload.bookingId);
   if (index >= 0) {
     items[index] = { ...items[index], ...payload };
   } else {
     items.push(payload);
   }
-  writeEquipmentReturns(items);
+  await writeEquipmentReturns(items);
 };
 
 const confirmEquipmentReturn = async (bookingId, options = {}) => {
   const notifyRequester = options.notifyRequester !== false;
-  const items = readEquipmentReturns();
+  const items = await readEquipmentReturns();
   const target = items.find((i) => i.bookingId === bookingId);
   if (!target) return { ok: false, message: 'return_request_not_found' };
 
@@ -368,7 +494,7 @@ const confirmEquipmentReturn = async (bookingId, options = {}) => {
     target.status = 'returned';
     target.confirmedAt = new Date().toISOString();
     target.confirmedBy = 'responsible';
-    writeEquipmentReturns(items);
+    await writeEquipmentReturns(items);
 
     if (notifyRequester && target.requesterEmail) {
       try {
@@ -407,7 +533,7 @@ const confirmEquipmentReturnBatch = async (bookingIds) => {
     : [];
   if (!ids.length) return { ok: false, message: 'bookingIds_required' };
 
-  const all = readEquipmentReturns();
+  const all = await readEquipmentReturns();
   const selected = all.filter((i) => ids.includes(String(i.bookingId || '')));
   if (!selected.length) return { ok: false, message: 'return_request_not_found' };
 
@@ -443,7 +569,7 @@ const confirmEquipmentReturnBatch = async (bookingIds) => {
 
 const applyBookingDecision = async (bookingId, decision) => {
   const normalized = decision === 'rejected' ? 'rejected' : 'approved';
-  const items = readApprovals();
+  const items = await readApprovals();
   const target = items.find((i) => i.bookingId === bookingId);
   if (!target) return { ok: false, message: 'booking_not_found' };
 
@@ -456,7 +582,7 @@ const applyBookingDecision = async (bookingId, decision) => {
       target.rejectedAt = new Date().toISOString();
       target.rejectedBy = 'responsible';
     }
-    writeApprovals(items);
+    await writeApprovals(items);
 
     if (target.requesterEmail) {
       const subject = normalized === 'approved'
@@ -571,7 +697,7 @@ app.post('/api/send-booking-email', async (req, res) => {
       html,
     });
 
-    upsertPendingRequest({
+    await upsertPendingRequest({
       bookingId,
       confirmToken,
       requesterName,
@@ -622,7 +748,7 @@ app.get('/api/booking-decision-link', async (req, res) => {
     return res.status(400).send('<h3>Invalid confirm link</h3>');
   }
 
-  const items = readApprovals();
+  const items = await readApprovals();
   const target = items.find((i) => i.bookingId === bookingId);
   if (!target) {
     return res.status(404).send('<h3>Booking not found</h3>');
@@ -665,8 +791,8 @@ app.post('/api/reject-booking', async (req, res) => {
   return res.json(result);
 });
 
-app.get('/api/confirmed-bookings', (_req, res) => {
-  const items = readApprovals().filter((i) => i.status === 'approved' || i.status === 'rejected');
+app.get('/api/confirmed-bookings', async (_req, res) => {
+  const items = (await readApprovals()).filter((i) => i.status === 'approved' || i.status === 'rejected');
   return res.json({ ok: true, items });
 });
 
@@ -739,7 +865,7 @@ app.post('/api/send-equipment-return-email', async (req, res) => {
       attachments: proofAttachment ? [proofAttachment] : [],
     });
 
-    upsertEquipmentReturnRequest({
+    await upsertEquipmentReturnRequest({
       bookingId,
       confirmToken,
       requesterName: requesterName || '',
@@ -837,8 +963,8 @@ app.post('/api/send-equipment-return-batch-email', async (req, res) => {
       attachments: proofAttachment ? [proofAttachment] : [],
     });
 
-    sanitized.forEach((b) => {
-      upsertEquipmentReturnRequest({
+    for (const b of sanitized) {
+      await upsertEquipmentReturnRequest({
         bookingId: b.bookingId,
         confirmToken,
         requesterName: requesterName || '',
@@ -853,7 +979,7 @@ app.post('/api/send-equipment-return-batch-email', async (req, res) => {
         status: 'return_requested',
         createdAt: new Date().toISOString(),
       });
-    });
+    }
 
     return res.json({ ok: true, messageId: info.messageId || '' });
   } catch (error) {
@@ -867,7 +993,7 @@ app.get('/api/equipment-return-link', async (req, res) => {
   if (!bookingId || !token) {
     return res.status(400).send('<h3>Invalid return confirmation link</h3>');
   }
-  const items = readEquipmentReturns();
+  const items = await readEquipmentReturns();
   const target = items.find((i) => i.bookingId === bookingId);
   if (!target) return res.status(404).send('<h3>Return request not found</h3>');
   if (!target.confirmToken || target.confirmToken !== token) {
@@ -892,7 +1018,7 @@ app.get('/api/equipment-return-batch-link', async (req, res) => {
   if (!token || !bookingIds.length) {
     return res.status(400).send('<h3>Invalid return confirmation link</h3>');
   }
-  const items = readEquipmentReturns();
+  const items = await readEquipmentReturns();
   const selected = items.filter((i) => bookingIds.includes(String(i.bookingId || '')));
   if (selected.length !== bookingIds.length) {
     return res.status(404).send('<h3>Some return requests not found</h3>');
@@ -911,8 +1037,8 @@ app.get('/api/equipment-return-batch-link', async (req, res) => {
 <style>body{font-family:Arial,sans-serif;padding:24px;background:#f4faf8;color:#2d3a44}.card{max-width:560px;background:#fff;border:1px solid #d4e6e3;border-radius:14px;padding:16px}</style></head>
 <body><div class="card"><h2>Batch Return Confirmed</h2><p>All selected returns are confirmed and the requester has been notified.</p></div></body></html>`);
 });
-app.get('/api/confirmed-equipment-returns', (_req, res) => {
-  const items = readEquipmentReturns().filter((i) => i.status === 'returned');
+app.get('/api/confirmed-equipment-returns', async (_req, res) => {
+  const items = (await readEquipmentReturns()).filter((i) => i.status === 'returned');
   return res.json({ ok: true, items });
 });
 
@@ -932,23 +1058,23 @@ app.post('/api/validate-register-email', async (req, res) => {
   }
 });
 
-app.get('/api/shared-state', (_req, res) => {
-  const items = readSharedState();
+app.get('/api/shared-state', async (_req, res) => {
+  const items = await readSharedState();
   return res.json({ ok: true, items });
 });
 
-app.post('/api/shared-state', (req, res) => {
+app.post('/api/shared-state', async (req, res) => {
   const payload = req.body && typeof req.body === 'object' ? req.body : {};
   const incoming = payload.items && typeof payload.items === 'object' ? payload.items : null;
   if (!incoming) {
     return res.status(400).json({ ok: false, message: 'invalid_payload' });
   }
-  const current = readSharedState();
+  const current = await readSharedState();
   for (const [key, value] of Object.entries(incoming)) {
     if (!sharedStateKeys.has(key)) continue;
     current[key] = value;
   }
-  writeSharedState(current);
+  await writeSharedState(current);
   return res.json({ ok: true });
 });
 
@@ -1030,7 +1156,7 @@ app.post('/api/send-register-otp', async (req, res) => {
 });
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true });
+  res.json({ ok: true, dbEnabled, dbConnected: Boolean(getDbPool()) });
 });
 
 app.get('/api/mail-status', (_req, res) => {
@@ -1050,6 +1176,19 @@ const dev = process.env.NODE_ENV !== 'production';
 if (!fs.existsSync(nextWorkDir)) fs.mkdirSync(nextWorkDir, { recursive: true });
 
 const startServer = async () => {
+  if (dbEnabled) {
+    try {
+      await initDbWithRetry();
+      await migrateFileDataToDbIfNeeded();
+      console.log('MySQL connected.');
+    } catch (err) {
+      console.error('MySQL init failed, fallback to file storage:', err.message || err);
+      dbPool = null;
+    }
+  } else {
+    console.log('MySQL disabled (DB_HOST/DB_USER/DB_NAME not set), using file storage.');
+  }
+
   const originalCwd = process.cwd();
   process.chdir(nextWorkDir);
   const nextApp = next({

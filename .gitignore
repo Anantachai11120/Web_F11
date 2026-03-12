@@ -8,3 +8,4 @@ data/next-work/
 server-run.log
 data/shared-state.json
 data/*.json
+backups/

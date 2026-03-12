@@ -1,0 +1,156 @@
+USE weblab_f11;
+
+-- 1) ภาพรวม key ที่เก็บในระบบ
+SELECT 
+  k,
+  updated_at,
+  CHAR_LENGTH(v) AS bytes
+FROM app_kv
+ORDER BY updated_at DESC;
+
+-- 2) สรุปจำนวนข้อมูลแต่ละหมวดใน shared_state
+SELECT
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_users')) AS users_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_room_bookings')) AS room_bookings_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_equipment_bookings')) AS equipment_bookings_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_equipment_items')) AS equipment_items_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_equipment_types')) AS equipment_types_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_announcements')) AS announcements_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_responsible_staff')) AS responsible_staff_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_room_closures')) AS room_closures_count,
+  JSON_LENGTH(JSON_EXTRACT(v, '$.lab_notifications')) AS notifications_count
+FROM app_kv
+WHERE k = 'shared_state';
+
+-- 3) ดู JSON ทั้งก้อนของ shared_state
+SELECT k, updated_at, JSON_PRETTY(v) AS data
+FROM app_kv
+WHERE k = 'shared_state';
+
+-- 4) ลิสต์ผู้ใช้
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_users[*]'
+  COLUMNS(
+    id VARCHAR(80) PATH '$.id',
+    username VARCHAR(120) PATH '$.username',
+    fullName VARCHAR(200) PATH '$.fullName',
+    email VARCHAR(200) PATH '$.email',
+    studentId VARCHAR(80) PATH '$.studentId',
+    role VARCHAR(40) PATH '$.role',
+    verified VARCHAR(20) PATH '$.verified',
+    suspended VARCHAR(20) PATH '$.suspended'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 5) ลิสต์การจองห้อง
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_room_bookings[*]'
+  COLUMNS(
+    bookingId VARCHAR(120) PATH '$.bookingId',
+    requesterName VARCHAR(200) PATH '$.requesterName',
+    requesterEmail VARCHAR(200) PATH '$.requesterEmail',
+    dateUse VARCHAR(20) PATH '$.date',
+    timeSlot VARCHAR(60) PATH '$.timeSlot',
+    objective VARCHAR(200) PATH '$.objective',
+    status VARCHAR(40) PATH '$.status',
+    responsibleName VARCHAR(200) PATH '$.responsibleName'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 6) ลิสต์การจองอุปกรณ์
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_equipment_bookings[*]'
+  COLUMNS(
+    bookingId VARCHAR(120) PATH '$.bookingId',
+    requesterName VARCHAR(200) PATH '$.requesterName',
+    requesterEmail VARCHAR(200) PATH '$.requesterEmail',
+    itemName VARCHAR(200) PATH '$.itemName',
+    quantity INT PATH '$.quantity',
+    dateUse VARCHAR(20) PATH '$.date',
+    timeSlot VARCHAR(60) PATH '$.timeSlot',
+    status VARCHAR(40) PATH '$.status',
+    responsibleName VARCHAR(200) PATH '$.responsibleName'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 7) ลิสต์อุปกรณ์ทั้งหมด
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_equipment_items[*]'
+  COLUMNS(
+    id VARCHAR(80) PATH '$.id',
+    name VARCHAR(200) PATH '$.name',
+    nameEn VARCHAR(200) PATH '$.nameEn',
+    typeName VARCHAR(120) PATH '$.typeName',
+    quantity INT PATH '$.quantity',
+    imageUrl VARCHAR(500) PATH '$.imageUrl'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 8) ลิสต์ชนิดอุปกรณ์
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_equipment_types[*]'
+  COLUMNS(
+    id VARCHAR(80) PATH '$.id',
+    name VARCHAR(120) PATH '$.name'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 9) ลิสต์บุคลากรผู้รับผิดชอบ
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_responsible_staff[*]'
+  COLUMNS(
+    id VARCHAR(80) PATH '$.id',
+    name VARCHAR(200) PATH '$.name',
+    email VARCHAR(200) PATH '$.email',
+    role VARCHAR(120) PATH '$.role'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 10) ลิสต์ประกาศ/ข่าวสาร
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_announcements[*]'
+  COLUMNS(
+    id VARCHAR(80) PATH '$.id',
+    title VARCHAR(255) PATH '$.title',
+    postType VARCHAR(80) PATH '$.postType',
+    createdAt VARCHAR(50) PATH '$.createdAt'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 11) ลิสต์วัน/ช่วงเวลาที่ปิดห้อง
+SELECT jt.*
+FROM app_kv,
+JSON_TABLE(v, '$.lab_room_closures[*]'
+  COLUMNS(
+    id VARCHAR(80) PATH '$.id',
+    dateUse VARCHAR(20) PATH '$.date',
+    modeType VARCHAR(20) PATH '$.mode',
+    timeSlot VARCHAR(60) PATH '$.timeSlot',
+    reason VARCHAR(255) PATH '$.reason'
+  )
+) jt
+WHERE k='shared_state';
+
+-- 12) ดูก้อนอนุมัติการจองห้อง
+SELECT k, updated_at, JSON_PRETTY(v) AS data
+FROM app_kv
+WHERE k='booking_approvals';
+
+-- 13) ดูก้อนการคืนอุปกรณ์
+SELECT k, updated_at, JSON_PRETTY(v) AS data
+FROM app_kv
+WHERE k='equipment_returns';

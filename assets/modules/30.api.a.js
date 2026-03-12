@@ -727,6 +727,23 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
     }
 
     if (key === storageKeys.roomBookings) {
+      const closure = findRoomClosure({
+        room: String(data.room || "Lab-F11"),
+        date: String(data.date || ""),
+        timeSlot: String(data.timeSlot || ""),
+      });
+      if (closure) {
+        setNotice(
+          notice,
+          t("roomClosedMessage", {
+            mode: roomClosureLabel(closure),
+            reason: closure.reason || "-",
+          }),
+          "error"
+        );
+        renderRoomSlots();
+        return;
+      }
       if (!String(data.responsibleId || "").trim()) {
         setNotice(notice, t("responsibleRequired"), "error");
         return;
@@ -764,6 +781,22 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
       }
     }
     if (key === storageKeys.equipmentBookings) {
+      const closure = findRoomClosure({
+        room: String(data.room || "Lab-F11"),
+        date: String(data.date || ""),
+        timeSlot: String(data.timeSlot || ""),
+      });
+      if (closure) {
+        setNotice(
+          notice,
+          t("roomClosedMessage", {
+            mode: roomClosureLabel(closure),
+            reason: closure.reason || "-",
+          }),
+          "error"
+        );
+        return;
+      }
       if (!String(data.responsibleId || "").trim()) {
         setNotice(notice, t("responsibleRequired"), "error");
         return;

@@ -3,6 +3,7 @@ const adminActions = () => {
   if (!isAdminSession()) return;
   setupAdminSectionTabs();
   setupAdminDataExport();
+  setupAdminRoomClosureForm();
 
   const form = byId("announcementForm");
   const broadcastForm = byId("adminBroadcastForm");
@@ -223,6 +224,16 @@ const adminActions = () => {
       return;
     }
 
+    if (target.dataset.deleteRoomClosure !== undefined) {
+      if (!window.confirm(t("confirmDeleteRoomClosure"))) return;
+      const id = String(target.dataset.deleteRoomClosure || "").trim();
+      const list = getRoomClosures().filter((item) => String(item.id || "") !== id);
+      save(storageKeys.roomClosures, list);
+      renderAdminRoomClosures();
+      renderRoomSlots();
+      return;
+    }
+
     if (target.dataset.deleteResponsible !== undefined) {
       if (!window.confirm(t("confirmDeleteResponsible"))) return;
       const index = Number(target.dataset.deleteResponsible);
@@ -272,6 +283,7 @@ const adminActions = () => {
   renderBroadcastRecipientList();
   renderAdminAnnouncements();
   renderResponsibleAdminList();
+  renderAdminRoomClosures();
 };
 
 const bootstrapApp = async () => {
@@ -388,6 +400,7 @@ const bootstrapApp = async () => {
   renderBroadcastRecipientList();
   renderAdminAnnouncements();
   renderResponsibleAdminList();
+  renderAdminRoomClosures();
 };
 
 bootstrapApp();

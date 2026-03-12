@@ -272,6 +272,16 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
 }
+
+.admin-room-close-wrap h3 {
+  margin-bottom: 0.25rem;
+}
+
+.admin-room-close-form {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
 @media (max-width: 640px) {
   .admin-export-range {
     grid-template-columns: 1fr;
@@ -655,6 +665,17 @@
   width: 34px;
   height: 34px;
   object-fit: contain;
+}
+
+.room-slot.closed {
+  opacity: 0.68;
+  cursor: not-allowed;
+  background: rgba(255, 241, 241, 0.9);
+}
+
+.room-slot.closed:hover {
+  border-color: #e2b8b8;
+  box-shadow: none;
 }
 
 .room-slot.expanded {

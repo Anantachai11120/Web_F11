@@ -1,3 +1,163 @@
+const normalizeRoomClosure = (entry) => {
+  const raw = entry && typeof entry === "object" ? entry : {};
+  const mode = String(raw.mode || "").trim() === "slot" ? "slot" : "day";
+  return {
+    id: String(raw.id || `rc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
+    room: String(raw.room || "Lab-F11"),
+    date: String(raw.date || "").trim(),
+    mode,
+    timeSlot: mode === "slot" ? String(raw.timeSlot || "").trim() : "",
+    reason: String(raw.reason || "").trim(),
+    createdAt: String(raw.createdAt || new Date().toISOString()),
+    createdBy: String(raw.createdBy || "-"),
+  };
+};
+
+const getRoomClosures = () => {
+  const list = load(storageKeys.roomClosures, []);
+  if (!Array.isArray(list)) return [];
+  const normalized = list
+    .map((entry) => normalizeRoomClosure(entry))
+    .filter((entry) => entry.date && (entry.mode === "day" || entry.timeSlot));
+  if (normalized.length !== list.length) {
+    save(storageKeys.roomClosures, normalized);
+  }
+  return normalized.sort((a, b) => {
+    const byDate = String(b.date || "").localeCompare(String(a.date || ""));
+    if (byDate !== 0) return byDate;
+    return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+  });
+};
+
+const findRoomClosure = (selection) => {
+  const room = String(selection?.room || "Lab-F11").trim();
+  const date = String(selection?.date || "").trim();
+  const timeSlot = String(selection?.timeSlot || "").trim();
+  if (!date) return null;
+  const list = getRoomClosures();
+  const exact = list.find((item) => {
+    if (item.room !== room || item.date !== date) return false;
+    if (item.mode === "day") return true;
+    return Boolean(timeSlot) && item.timeSlot === timeSlot;
+  });
+  return exact || null;
+};
+
+const roomClosureLabel = (item) => {
+  if (!item) return "";
+  if (item.mode === "day") return t("adminRoomCloseModeDay");
+  return `${t("adminRoomCloseModeSlot")} (${item.timeSlot || "-"})`;
+};
+
+const renderAdminRoomClosures = () => {
+  const box = byId("adminRoomCloseList");
+  if (!box) return;
+  const list = getRoomClosures();
+  box.innerHTML = list.length
+    ? list
+        .map(
+          (item) => `<div class="admin-item">
+            <div>
+              <p><strong>${item.room}</strong> · ${item.date}</p>
+              <p class="muted">${roomClosureLabel(item)} ${item.reason ? `| ${item.reason}` : ""}</p>
+              <p class="muted">${t("approvedBy")}: ${item.createdBy || "-"} | ${new Date(item.createdAt).toLocaleString(localeByLang())}</p>
+            </div>
+            <div class="feed-actions-end inline-actions">
+              <button type="button" class="btn-small danger" data-delete-room-closure="${item.id}">${t("deleteBtn")}</button>
+            </div>
+          </div>`
+        )
+        .join("")
+    : `<p class="muted">${t("adminRoomCloseEmpty")}</p>`;
+};
+
+const setupAdminRoomClosureForm = () => {
+  if (!isCurrentPage("admin.html")) return;
+  const form = byId("adminRoomCloseForm");
+  const mode = byId("adminRoomCloseMode");
+  const timeWrap = byId("adminRoomCloseTimeWrap");
+  const time = byId("adminRoomCloseTime");
+  const reasonPreset = byId("adminRoomCloseReasonPreset");
+  const reasonInput = byId("adminRoomCloseReason");
+  const notice = byId("adminRoomCloseNotice");
+  if (!form || !mode || !timeWrap) return;
+
+  const syncMode = () => {
+    const isSlot = mode.value === "slot";
+    timeWrap.hidden = !isSlot;
+    if (!isSlot && time) time.value = "";
+  };
+  syncMode();
+  if (!mode.dataset.bound) {
+    mode.dataset.bound = "1";
+    mode.addEventListener("change", syncMode);
+  }
+  if (reasonPreset && reasonInput && !reasonPreset.dataset.bound) {
+    reasonPreset.dataset.bound = "1";
+    reasonPreset.addEventListener("change", () => {
+      const value = String(reasonPreset.value || "").trim();
+      if (!value) return;
+      reasonInput.value = value;
+    });
+  }
+
+  if (!form.dataset.bound) {
+    form.dataset.bound = "1";
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!requireAdminAction()) return;
+      const date = String(byId("adminRoomCloseDate")?.value || "").trim();
+      const room = "Lab-F11";
+      const closeMode = String(byId("adminRoomCloseMode")?.value || "day");
+      const timeSlot = String(byId("adminRoomCloseTime")?.value || "").trim();
+      const reasonText = String(byId("adminRoomCloseReason")?.value || "").trim();
+      const reasonQuick = String(byId("adminRoomCloseReasonPreset")?.value || "").trim();
+      const reason = reasonText || reasonQuick;
+      if (!date) {
+        setNotice(notice, t("fillAll"), "error");
+        return;
+      }
+      if (closeMode === "slot" && !timeSlot) {
+        setNotice(notice, t("fillAll"), "error");
+        return;
+      }
+
+      const list = getRoomClosures();
+      const duplicated = list.some(
+        (item) =>
+          item.room === room &&
+          item.date === date &&
+          item.mode === closeMode &&
+          (closeMode === "day" || item.timeSlot === timeSlot)
+      );
+      if (duplicated) {
+        setNotice(notice, t("adminRoomCloseDuplicate"), "error");
+        return;
+      }
+
+      list.push(
+        normalizeRoomClosure({
+          room,
+          date,
+          mode: closeMode,
+          timeSlot,
+          reason,
+          createdBy: getSession()?.username || "admin",
+        })
+      );
+      save(storageKeys.roomClosures, list);
+      setNotice(notice, t("adminRoomCloseSaved"));
+      form.reset();
+      syncMode();
+      if (reasonPreset) reasonPreset.value = "";
+      renderAdminRoomClosures();
+      renderRoomSlots();
+    });
+  }
+
+  renderAdminRoomClosures();
+};
+
 const renderRoomApproval = () => {
   const target = byId("roomApproveList");
   if (!target) return;

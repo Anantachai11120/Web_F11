@@ -758,6 +758,30 @@ const renderRoomSlots = () => {
     return;
   }
 
+  const closure = findRoomClosure(selection);
+  if (closure) {
+    if (summary) {
+      summary.textContent = t("roomClosedSummary", {
+        date: selection.date,
+        mode: roomClosureLabel(closure),
+      });
+    }
+    if (dailySummary) {
+      dailySummary.textContent = t("roomClosedReason", {
+        reason: closure.reason || "-",
+      });
+    }
+    if (detail) detail.textContent = t("roomClosedDetail");
+    currentRoomSlotEntries = [];
+    grid.innerHTML = Array.from({ length: 20 })
+      .map(
+        (_, i) =>
+          `<div class="room-slot closed" title="${t("roomClosedSlotTitle", { index: i + 1 })}"><img src="image/userR.png" alt="closed" /></div>`
+      )
+      .join("");
+    return;
+  }
+
   const bookings = roomBookingsBySelection(selection).filter((b) => b.status === "approved");
   const staffMap = new Map(getResponsibleStaff().map((s) => [String(s.id || ""), s]));
   const pendingCount = roomBookingsBySelection(selection).filter((b) => b.status !== "approved").length;

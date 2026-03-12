@@ -1,4 +1,40 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: weblab-mysql
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Bangkok
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpass}
+      - MYSQL_DATABASE=${DB_NAME:-weblab_f11}
+      - MYSQL_USER=${DB_USER:-weblab}
+      - MYSQL_PASSWORD=${DB_PASS:-weblab_pass}
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u${DB_USER:-weblab} -p${DB_PASS:-weblab_pass} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: weblab-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - UPLOAD_LIMIT=64M
+    ports:
+      - "8080:80"
+
   weblab-f11:
     build:
       context: .
@@ -14,5 +50,15 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER:-weblab}
+      - DB_PASS=${DB_PASS:-weblab_pass}
+      - DB_NAME=${DB_NAME:-weblab_f11}
     volumes:
       - ./data:/app/data
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:

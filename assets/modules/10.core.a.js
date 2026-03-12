@@ -85,6 +85,7 @@ const sharedStorageKeys = new Set([
   storageKeys.announcements,
   storageKeys.homeInfo,
   storageKeys.responsibleStaff,
+  storageKeys.roomClosures,
   storageKeys.notifications,
 ]);
 

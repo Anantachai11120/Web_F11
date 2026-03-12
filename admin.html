@@ -91,6 +91,45 @@
 
         <article class="card admin-section-panel" data-admin-panel="roomApproval" hidden>
           <h2 data-i18n="adminTabRoomApproval">อนุมัติการจองห้อง</h2>
+          <div class="admin-room-close-wrap">
+            <h3 data-i18n="adminRoomCloseTitle">ปิดการใช้งานห้องแลป</h3>
+            <p class="muted" data-i18n="adminRoomCloseHint">แอดมินสามารถปิดทั้งวันหรือปิดเฉพาะช่วงเวลา เพื่อไม่ให้ผู้ใช้จองห้อง/อุปกรณ์ได้</p>
+            <form id="adminRoomCloseForm" class="admin-room-close-form">
+              <div class="room-filter-grid">
+                <div class="room-filter-item">
+                  <label for="adminRoomCloseDate" data-i18n="adminRoomCloseDateLabel">วันที่ปิด</label>
+                  <input id="adminRoomCloseDate" type="date" />
+                </div>
+                <div class="room-filter-item">
+                  <label for="adminRoomCloseMode" data-i18n="adminRoomCloseModeLabel">รูปแบบการปิด</label>
+                  <select id="adminRoomCloseMode">
+                    <option value="day" data-i18n="adminRoomCloseModeDay">ปิดทั้งวัน</option>
+                    <option value="slot" data-i18n="adminRoomCloseModeSlot">ปิดเฉพาะช่วงเวลา</option>
+                  </select>
+                </div>
+                <div class="room-filter-item" id="adminRoomCloseTimeWrap" hidden>
+                  <label for="adminRoomCloseTime" data-i18n="adminRoomCloseTimeLabel">ช่วงเวลาที่ปิด</label>
+                  <select id="adminRoomCloseTime">
+                    <option value="">เลือกเวลา</option>
+                    <option>09:00 - 12:00</option>
+                    <option>13:00 - 17:00</option>
+                  </select>
+                </div>
+              </div>
+              <label for="adminRoomCloseReason" data-i18n="adminRoomCloseReasonLabel">เหตุผล (ไม่บังคับ)</label>
+              <select id="adminRoomCloseReasonPreset">
+                <option value="" data-i18n="adminRoomCloseReasonSelect">เลือกเหตุผล</option>
+                <option value="ใช้สอบ" data-i18n="adminRoomCloseReasonExam">ใช้สอบ</option>
+                <option value="ใช้ประชุม" data-i18n="adminRoomCloseReasonMeeting">ใช้ประชุม</option>
+                <option value="ใช้สอน" data-i18n="adminRoomCloseReasonTeaching">ใช้สอน</option>
+              </select>
+              <input id="adminRoomCloseReason" type="text" data-i18n-placeholder="adminRoomCloseReasonPlaceholder" placeholder="เช่น ปิดปรับปรุงระบบไฟฟ้า" />
+              <button type="submit" class="btn-small" data-i18n="adminRoomCloseSaveBtn">บันทึกการปิดห้อง</button>
+              <div id="adminRoomCloseNotice" class="notice" hidden></div>
+            </form>
+            <div id="adminRoomCloseList"></div>
+          </div>
+          <hr />
           <div id="roomApproveList"></div>
         </article>
 

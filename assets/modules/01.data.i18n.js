@@ -851,6 +851,32 @@ Object.assign(i18n.th, {
   adminExportExcelBtn: "\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e42\u0e2b\u0e25\u0e14 Excel",
   adminExportDone:
     "\u0e2a\u0e48\u0e07\u0e2d\u0e2d\u0e01\u0e02\u0e49\u0e2d\u0e21\u0e39\u0e25 {{format}} \u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22 ({{count}} \u0e23\u0e32\u0e22\u0e01\u0e32\u0e23)",
+  adminRoomCloseTitle: "\u0e1b\u0e34\u0e14\u0e01\u0e32\u0e23\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19\u0e2b\u0e49\u0e2d\u0e07\u0e41\u0e25\u0e1b",
+  adminRoomCloseHint:
+    "\u0e41\u0e2d\u0e14\u0e21\u0e34\u0e19\u0e2a\u0e32\u0e21\u0e32\u0e23\u0e16\u0e1b\u0e34\u0e14\u0e17\u0e31\u0e49\u0e07\u0e27\u0e31\u0e19\u0e2b\u0e23\u0e37\u0e2d\u0e1b\u0e34\u0e14\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32 \u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e44\u0e21\u0e48\u0e43\u0e2b\u0e49\u0e1c\u0e39\u0e49\u0e43\u0e0a\u0e49\u0e08\u0e2d\u0e07\u0e2b\u0e49\u0e2d\u0e07/\u0e2d\u0e38\u0e1b\u0e01\u0e23\u0e13\u0e4c\u0e44\u0e14\u0e49",
+  adminRoomCloseDateLabel: "\u0e27\u0e31\u0e19\u0e17\u0e35\u0e48\u0e1b\u0e34\u0e14",
+  adminRoomCloseModeLabel: "\u0e23\u0e39\u0e1b\u0e41\u0e1a\u0e1a\u0e01\u0e32\u0e23\u0e1b\u0e34\u0e14",
+  adminRoomCloseModeDay: "\u0e1b\u0e34\u0e14\u0e17\u0e31\u0e49\u0e07\u0e27\u0e31\u0e19",
+  adminRoomCloseModeSlot: "\u0e1b\u0e34\u0e14\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32",
+  adminRoomCloseTimeLabel: "\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32\u0e17\u0e35\u0e48\u0e1b\u0e34\u0e14",
+  adminRoomCloseReasonLabel: "\u0e40\u0e2b\u0e15\u0e38\u0e1c\u0e25 (\u0e44\u0e21\u0e48\u0e1a\u0e31\u0e07\u0e04\u0e31\u0e1a)",
+  adminRoomCloseReasonPlaceholder: "\u0e40\u0e0a\u0e48\u0e19 \u0e1b\u0e34\u0e14\u0e1b\u0e23\u0e31\u0e1a\u0e1b\u0e23\u0e38\u0e07\u0e23\u0e30\u0e1a\u0e1a\u0e44\u0e1f\u0e1f\u0e49\u0e32",
+  adminRoomCloseSaveBtn: "\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e01\u0e32\u0e23\u0e1b\u0e34\u0e14\u0e2b\u0e49\u0e2d\u0e07",
+  adminRoomCloseEmpty: "\u0e22\u0e31\u0e07\u0e44\u0e21\u0e48\u0e21\u0e35\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e1b\u0e34\u0e14\u0e2b\u0e49\u0e2d\u0e07",
+  adminRoomCloseSaved: "\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e01\u0e32\u0e23\u0e1b\u0e34\u0e14\u0e2b\u0e49\u0e2d\u0e07\u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22",
+  adminRoomCloseDuplicate: "\u0e27\u0e31\u0e19/\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32\u0e19\u0e35\u0e49\u0e21\u0e35\u0e01\u0e32\u0e23\u0e1b\u0e34\u0e14\u0e44\u0e27\u0e49\u0e41\u0e25\u0e49\u0e27",
+  confirmDeleteRoomClosure: "\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e25\u0e1a\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e1b\u0e34\u0e14\u0e2b\u0e49\u0e2d\u0e07\u0e19\u0e35\u0e49\u0e43\u0e0a\u0e48\u0e2b\u0e23\u0e37\u0e2d\u0e44\u0e21\u0e48?",
+  roomClosedMessage:
+    "\u0e44\u0e21\u0e48\u0e2a\u0e32\u0e21\u0e32\u0e23\u0e16\u0e08\u0e2d\u0e07\u0e44\u0e14\u0e49: \u0e23\u0e30\u0e1a\u0e1a\u0e1b\u0e34\u0e14\u0e2b\u0e49\u0e2d\u0e07\u0e41\u0e25\u0e1b ({{mode}}) | \u0e40\u0e2b\u0e15\u0e38\u0e1c\u0e25: {{reason}}",
+  roomClosedSummary:
+    "\u0e27\u0e31\u0e19\u0e17\u0e35\u0e48 {{date}} \u0e1b\u0e34\u0e14\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19\u0e2b\u0e49\u0e2d\u0e07 ({{mode}})",
+  roomClosedReason: "\u0e40\u0e2b\u0e15\u0e38\u0e1c\u0e25: {{reason}}",
+  roomClosedDetail: "\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32\u0e19\u0e35\u0e49\u0e2b\u0e49\u0e2d\u0e07\u0e1b\u0e34\u0e14\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19 \u0e44\u0e21\u0e48\u0e2a\u0e32\u0e21\u0e32\u0e23\u0e16\u0e08\u0e2d\u0e07\u0e44\u0e14\u0e49",
+  roomClosedSlotTitle: "\u0e0a\u0e48\u0e2d\u0e07 {{index}} \u0e1b\u0e34\u0e14\u0e43\u0e0a\u0e49\u0e07\u0e32\u0e19",
+  adminRoomCloseReasonSelect: "\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e40\u0e2b\u0e15\u0e38\u0e1c\u0e25",
+  adminRoomCloseReasonExam: "\u0e43\u0e0a\u0e49\u0e2a\u0e2d\u0e1a",
+  adminRoomCloseReasonMeeting: "\u0e43\u0e0a\u0e49\u0e1b\u0e23\u0e30\u0e0a\u0e38\u0e21",
+  adminRoomCloseReasonTeaching: "\u0e43\u0e0a\u0e49\u0e2a\u0e2d\u0e19",
 });
 
 Object.assign(i18n.en, {
@@ -873,4 +899,29 @@ Object.assign(i18n.en, {
   adminExportCsvBtn: "Download CSV",
   adminExportExcelBtn: "Download Excel",
   adminExportDone: "Exported {{format}} successfully ({{count}} rows)",
+  adminRoomCloseTitle: "Lab Closure Control",
+  adminRoomCloseHint:
+    "Admin can close the whole day or a specific timeslot to block room/equipment usage.",
+  adminRoomCloseDateLabel: "Closure date",
+  adminRoomCloseModeLabel: "Closure mode",
+  adminRoomCloseModeDay: "Close whole day",
+  adminRoomCloseModeSlot: "Close specific timeslot",
+  adminRoomCloseTimeLabel: "Timeslot to close",
+  adminRoomCloseReasonLabel: "Reason (optional)",
+  adminRoomCloseReasonPlaceholder: "e.g. Electrical maintenance",
+  adminRoomCloseSaveBtn: "Save closure",
+  adminRoomCloseEmpty: "No closure records.",
+  adminRoomCloseSaved: "Closure saved.",
+  adminRoomCloseDuplicate: "This date/timeslot is already closed.",
+  confirmDeleteRoomClosure: "Delete this closure record?",
+  roomClosedMessage:
+    "Booking unavailable: lab is closed ({{mode}}) | Reason: {{reason}}",
+  roomClosedSummary: "Date {{date}} is closed ({{mode}})",
+  roomClosedReason: "Reason: {{reason}}",
+  roomClosedDetail: "This timeslot is closed. Booking is disabled.",
+  roomClosedSlotTitle: "Slot {{index}} closed",
+  adminRoomCloseReasonSelect: "Select a reason",
+  adminRoomCloseReasonExam: "Exam",
+  adminRoomCloseReasonMeeting: "Meeting",
+  adminRoomCloseReasonTeaching: "Teaching",
 });
