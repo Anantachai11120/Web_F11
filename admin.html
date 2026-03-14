@@ -39,17 +39,18 @@
         <article class="card admin-section-nav">
           <h2 data-i18n="adminSectionMenuTitle">เมนูจัดการแอดมิน</h2>
           <div class="admin-tabbar">
-            <button type="button" class="admin-tab-btn active" data-admin-tab="announcement" data-i18n="adminTabAnnouncement">เพิ่มประกาศ / ข่าวสาร</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="roomApproval" data-i18n="adminTabRoomApproval">อนุมัติการจองห้อง</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="adminRole" data-i18n="adminTabAdminRole">จัดการสิทธิ์แอดมิน</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="responsibleStaff" data-i18n="adminTabResponsible">จัดการบุคลากรผู้รับผิดชอบแลป</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="equipmentSummary" data-i18n="adminTabEquipmentSummary">สรุปการยืมอุปกรณ์</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="emailNotify" data-i18n="adminTabEmailNotify">แจ้งเตือนทางอีเมล</button>
-            <button type="button" class="admin-tab-btn" data-admin-tab="dataExport" data-i18n="adminTabDataExport">ส่งออกข้อมูลสถิติ</button>
+            <button type="button" class="admin-tab-btn active" data-admin-tab="announcement" data-admin-min-role="teacher" data-i18n="adminTabAnnouncement">เพิ่มประกาศ / ข่าวสาร</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="roomApproval" data-admin-min-role="teacher" data-i18n="adminTabRoomApproval">อนุมัติการจองห้อง</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="zoneManagement" data-admin-min-role="admin" data-i18n="adminTabZoneManagement">จัดการโซน</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="adminRole" data-admin-min-role="teacher" data-i18n="adminTabAdminRole">จัดการสิทธิ์แอดมิน</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="responsibleStaff" data-admin-min-role="teacher" data-i18n="adminTabResponsible">จัดการบุคลากรผู้รับผิดชอบแลป</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="equipmentSummary" data-admin-min-role="teacher" data-i18n="adminTabEquipmentSummary">สรุปการยืมอุปกรณ์</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="emailNotify" data-admin-min-role="admin" data-i18n="adminTabEmailNotify">แจ้งเตือนทางอีเมล</button>
+            <button type="button" class="admin-tab-btn" data-admin-tab="dataExport" data-admin-min-role="teacher" data-i18n="adminTabDataExport">ส่งออกข้อมูลสถิติ</button>
           </div>
         </article>
 
-        <article class="card admin-section-panel" data-admin-panel="announcement">
+        <article class="card admin-section-panel" data-admin-panel="announcement" data-admin-min-role="teacher">
           <h2 data-i18n="adminTabAnnouncement">เพิ่มประกาศ / ข่าวสาร</h2>
           <form id="announcementForm">
             <label for="announceType" data-i18n="adminAnnounceTypeLabel">ประเภท</label>
@@ -87,9 +88,45 @@
 
           <h3 style="margin-top: 1rem;" data-i18n="adminAnnouncementListTitle">รายการประกาศ</h3>
           <div id="adminAnnouncementList"></div>
+
+          <hr />
+
+          <h3 id="adminLabProjectsTitle" style="margin-top: 1rem;">เพิ่มผลงานแลป</h3>
+          <form id="labProjectForm">
+            <label id="adminLabProjectTitleLabel" for="labProjectTitle">หัวข้อผลงาน</label>
+            <input id="labProjectTitle" type="text" placeholder="เช่น หุ่นยนต์ติดตามเส้นอัตโนมัติ" />
+
+            <label id="adminLabProjectAuthorLabel" for="labProjectAuthor">ผู้จัดทำ</label>
+            <input id="labProjectAuthor" type="text" placeholder="เช่น ทีมระบบอัตโนมัติ รุ่น 2026" />
+
+            <label id="adminLabProjectImageLabel" for="labProjectImage">ภาพผลงาน</label>
+            <input id="labProjectImage" type="file" accept="image/*" />
+            <div class="crop-wrap">
+              <canvas id="labProjectCropCanvas" width="360" height="220"></canvas>
+              <div class="crop-controls">
+                <label for="labProjectCropZoom">ซูมภาพผลงาน</label>
+                <input id="labProjectCropZoom" type="range" min="1" max="3" step="0.01" value="1" />
+                <label for="labProjectCropX">เลื่อนแนวนอน</label>
+                <input id="labProjectCropX" type="range" min="-220" max="220" step="1" value="0" />
+                <label for="labProjectCropY">เลื่อนแนวตั้ง</label>
+                <input id="labProjectCropY" type="range" min="-220" max="220" step="1" value="0" />
+                <button id="applyLabProjectCropBtn" type="button" class="btn-small">ครอปภาพผลงาน</button>
+              </div>
+            </div>
+            <p id="labProjectCropStatus" class="muted">ยังไม่ได้เลือกรูปผลงาน</p>
+
+            <label id="adminLabProjectContentLabel" for="labProjectContent">รายละเอียดผลงาน</label>
+            <textarea id="labProjectContent" placeholder="อธิบายแนวคิด วิธีการใช้งาน หรือผลลัพธ์เด่นของผลงาน"></textarea>
+
+            <button id="adminSaveLabProjectBtn" type="submit">บันทึกผลงาน</button>
+            <div id="adminLabProjectNotice" class="notice" hidden></div>
+          </form>
+
+          <h3 id="adminLabProjectListTitle" style="margin-top: 1rem;">รายการผลงานแลป</h3>
+          <div id="adminLabProjectList"></div>
         </article>
 
-        <article class="card admin-section-panel" data-admin-panel="roomApproval" hidden>
+        <article class="card admin-section-panel" data-admin-panel="roomApproval" data-admin-min-role="teacher" hidden>
           <h2 data-i18n="adminTabRoomApproval">อนุมัติการจองห้อง</h2>
           <div class="admin-room-close-wrap">
             <h3 data-i18n="adminRoomCloseTitle">ปิดการใช้งานห้องแลป</h3>
@@ -133,7 +170,81 @@
           <div id="roomApproveList"></div>
         </article>
 
-        <article class="card admin-section-panel" data-admin-panel="adminRole" hidden>
+        <article class="card admin-section-panel" data-admin-panel="zoneManagement" data-admin-min-role="admin" hidden>
+          <h2 data-i18n="adminTabZoneManagement">จัดการโซน</h2>
+          <div class="admin-room-zone-wrap">
+            <h3 id="adminRoomZoneEditorTitle">จัดการแผนผังโซนพื้นที่</h3>
+            <p id="adminRoomZoneEditorHint" class="muted">อัปโหลดภาพแผนผังหลัก เพิ่มโซน PNG แล้วลากวางตำแหน่งบนแผนที่ได้</p>
+            <div class="admin-room-zone-layout">
+              <div class="admin-room-zone-side">
+                <form id="adminRoomZoneBaseForm" class="admin-room-zone-form">
+                  <label id="adminRoomZoneBaseImageLabel" for="adminRoomZoneBaseUrl">ภาพแผนผังหลัก</label>
+                  <input id="adminRoomZoneBaseUrl" type="url" placeholder="image/room/roomaira.png หรือ https://..." />
+                  <div class="admin-room-zone-upload">
+                    <label for="adminRoomZoneBaseFile">อัปโหลดภาพแผนผังจากเครื่อง</label>
+                    <input id="adminRoomZoneBaseFile" type="file" accept="image/png,image/jpeg,image/webp" />
+                    <p class="muted">รองรับ PNG, JPG, WEBP</p>
+                  </div>
+                  <div class="admin-export-actions">
+                    <button id="adminRoomZoneBaseSaveBtn" type="submit" class="btn-small">บันทึกภาพแผนผัง</button>
+                    <button id="adminRoomZoneResetBtn" type="button" class="btn-small danger">รีเซ็ตแผนผัง</button>
+                  </div>
+                </form>
+                <form id="adminRoomZoneForm" class="admin-room-zone-form">
+                  <h4 id="adminRoomZoneFormTitle">เพิ่มโซนใหม่</h4>
+                  <label for="adminRoomZoneId">รหัสโซน</label>
+                  <input id="adminRoomZoneId" type="text" placeholder="เช่น zone-a" />
+                  <label for="adminRoomZoneLabel">ชื่อโซน</label>
+                  <input id="adminRoomZoneLabel" type="text" placeholder="เช่น A" />
+                  <div class="admin-room-zone-size-grid">
+                    <div>
+                      <label for="adminRoomZoneWidth">ความกว้าง (%)</label>
+                      <input id="adminRoomZoneWidth" type="number" min="5" max="40" step="1" value="14" />
+                    </div>
+                    <div>
+                      <label for="adminRoomZoneHeight">ความสูง (%)</label>
+                      <input id="adminRoomZoneHeight" type="number" min="5" max="40" step="1" value="12" />
+                    </div>
+                  </div>
+                  <label for="adminRoomZoneNormalUrl">ภาพโซนปกติ</label>
+                  <input id="adminRoomZoneNormalUrl" type="url" placeholder="PNG URL หรือเว้นไว้ถ้าอัปโหลดไฟล์" />
+                  <div class="admin-room-zone-upload">
+                    <label for="adminRoomZoneNormalFile">อัปโหลดภาพโซนปกติ</label>
+                    <input id="adminRoomZoneNormalFile" type="file" accept="image/png" />
+                    <p class="muted">ใช้ไฟล์ PNG เพื่อให้พื้นหลังโปร่งใส</p>
+                  </div>
+                  <label for="adminRoomZoneBookedUrl">ภาพโซนเมื่อถูกจอง</label>
+                  <input id="adminRoomZoneBookedUrl" type="url" placeholder="PNG URL สำหรับสถานะจองแล้ว" />
+                  <div class="admin-room-zone-upload">
+                    <label for="adminRoomZoneBookedFile">อัปโหลดภาพโซนเมื่อถูกจอง</label>
+                    <input id="adminRoomZoneBookedFile" type="file" accept="image/png" />
+                    <p class="muted">ถ้าไม่ใส่ ระบบจะใช้ภาพปกติและเปลี่ยนสถานะให้แทน</p>
+                  </div>
+                  <label for="adminRoomZoneActualUrl">ภาพพื้นที่จริงของโซน</label>
+                  <input id="adminRoomZoneActualUrl" type="url" placeholder="URL ภาพถ่ายจริงของพื้นที่โซนนี้" />
+                  <div class="admin-room-zone-upload">
+                    <label for="adminRoomZoneActualFile">อัปโหลดภาพพื้นที่จริงของโซน</label>
+                    <input id="adminRoomZoneActualFile" type="file" accept="image/png,image/jpeg,image/webp" />
+                    <p class="muted">ใช้ภาพถ่ายจริงของพื้นที่ เพื่อให้ผู้ใช้เห็นว่าโซนนี้อยู่ตรงไหน</p>
+                  </div>
+                  <p id="adminRoomZonePositionHint" class="muted">ลากไอคอนบนแผนที่เพื่อเปลี่ยนตำแหน่งได้</p>
+                  <div class="admin-export-actions">
+                    <button id="adminRoomZoneSaveBtn" type="submit" class="btn-small">บันทึกโซน</button>
+                    <button id="adminRoomZoneCreateBtn" type="button" class="btn-small">สร้างใหม่</button>
+                  </div>
+                  <div id="adminRoomZoneNotice" class="notice" hidden></div>
+                </form>
+              </div>
+              <div class="admin-room-zone-stage-wrap">
+                <div id="adminRoomZoneStage"></div>
+              </div>
+            </div>
+            <h4 id="adminRoomZoneListTitle" style="margin-top: 1rem;">รายการโซน</h4>
+            <div id="adminRoomZoneList"></div>
+          </div>
+        </article>
+
+        <article class="card admin-section-panel" data-admin-panel="adminRole" data-admin-min-role="teacher" hidden>
           <h2 data-i18n="adminTabAdminRole">จัดการสิทธิ์แอดมิน</h2>
           <p class="muted" data-i18n="adminRoleHint">กดปุ่มเพื่อแต่งตั้งผู้ใช้งานเป็นแอดมินเพิ่ม</p>
           <div id="adminUserList"></div>
@@ -143,7 +254,7 @@
           </div>
         </article>
 
-        <article class="card admin-section-panel" data-admin-panel="responsibleStaff" hidden>
+        <article class="card admin-section-panel" data-admin-panel="responsibleStaff" data-admin-min-role="teacher" hidden>
           <h2 data-i18n="adminTabResponsible">จัดการบุคลากรผู้รับผิดชอบแลป</h2>
           <form id="responsibleForm">
             <label for="responsibleName" data-i18n="adminResponsibleNameLabel">ชื่อบุคลากร</label>
@@ -166,14 +277,14 @@
           <div id="responsibleList"></div>
         </article>
 
-        <article class="card admin-section-panel" data-admin-panel="equipmentSummary" hidden>
+        <article class="card admin-section-panel" data-admin-panel="equipmentSummary" data-admin-min-role="teacher" hidden>
           <h2 data-i18n="adminBorrowSummaryTitle">สรุปการยืมอุปกรณ์</h2>
           <p class="muted" data-i18n="adminBorrowSummaryHint">แสดงรายการอุปกรณ์ที่ถูกยืม และผู้ใช้ที่ยังไม่คืน</p>
           <div id="adminEquipmentSummary"></div>
           <div id="adminEquipmentNotice" class="notice" hidden></div>
         </article>
 
-        <article class="card admin-section-panel" data-admin-panel="emailNotify" hidden>
+        <article class="card admin-section-panel" data-admin-panel="emailNotify" data-admin-min-role="admin" hidden>
           <h2 data-i18n="adminBroadcastTitle">แจ้งเตือนทางอีเมล</h2>
           <p class="muted" data-i18n="adminBroadcastHint">เลือกกลุ่มผู้รับหรือเลือกเป็นรายคน แล้วส่งข้อความแจ้งเตือน</p>
           <form id="adminBroadcastForm">
@@ -198,7 +309,7 @@
           </form>
         </article>
 
-        <article class="card admin-section-panel" data-admin-panel="dataExport" hidden>
+        <article class="card admin-section-panel" data-admin-panel="dataExport" data-admin-min-role="teacher" hidden>
           <h2 data-i18n="adminTabDataExport">ส่งออกข้อมูลสถิติ</h2>
           <p class="muted" data-i18n="adminExportHint">เลือกชุดข้อมูลที่ต้องการ และเลือกรูปแบบไฟล์เพื่อดาวน์โหลด</p>
           <form id="adminDataExportForm">

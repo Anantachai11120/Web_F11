@@ -322,7 +322,7 @@ const renderAnnouncements = () => {
 };
 
 const renderDashboard = () => {
-  const users = load(storageKeys.users);
+  const users = load(storageKeys.users, []);
   const roomBookings = load(storageKeys.roomBookings);
   const equipmentBookings = load(storageKeys.equipmentBookings);
 
@@ -755,6 +755,7 @@ const renderRoomSlots = () => {
           `<div class="room-slot" title="${t("roomSlotTitle", { index: i + 1 })}"><img src="image/userG.png" alt="empty" /></div>`
       )
       .join("");
+    if (typeof renderRoomZoneMaps === "function") renderRoomZoneMaps();
     return;
   }
 
@@ -779,6 +780,7 @@ const renderRoomSlots = () => {
           `<div class="room-slot closed" title="${t("roomClosedSlotTitle", { index: i + 1 })}"><img src="image/userR.png" alt="closed" /></div>`
       )
       .join("");
+    if (typeof renderRoomZoneMaps === "function") renderRoomZoneMaps();
     return;
   }
 
@@ -849,6 +851,7 @@ const renderRoomSlots = () => {
   }
   grid.innerHTML = html;
   if (typeof resetRoomSlotExpandState === "function") resetRoomSlotExpandState();
+  if (typeof renderRoomZoneMaps === "function") renderRoomZoneMaps();
 };
 
 const setupRoomBookingUI = () => {
@@ -889,6 +892,7 @@ const setupRoomBookingUI = () => {
     if (statusDate && !statusDate.value) statusDate.value = today;
     pickDefaultTime("roomStatusTime");
     renderRoomSlots();
+    if (typeof setupRoomZoneBookingMap === "function") setupRoomZoneBookingMap();
     return;
   }
 
@@ -941,7 +945,49 @@ const setupRoomBookingUI = () => {
   });
 
   setupResponsibleSelector();
+  setupRoomSectionTabs();
+  if (typeof setupRoomZoneBookingMap === "function") setupRoomZoneBookingMap();
   renderRoomSlots();
+};
+
+const setupRoomSectionTabs = () => {
+  if (!isCurrentPage("rooms.html")) return;
+  const nav = document.querySelector(".room-section-nav");
+  const buttons = Array.from(document.querySelectorAll("[data-room-tab]"));
+  const panels = Array.from(document.querySelectorAll("[data-room-panel]"));
+  if (!buttons.length || !panels.length) return;
+
+  const applyTab = (tabKey) => {
+    const next = String(tabKey || "").trim();
+    const availableButtons = buttons.filter((btn) => !btn.hidden);
+    const fallback = availableButtons[0]?.dataset.roomTab || "status";
+    const selected = availableButtons.some((btn) => btn.dataset.roomTab === next) ? next : fallback;
+    buttons.forEach((btn) => {
+      btn.classList.toggle("active", !btn.hidden && btn.dataset.roomTab === selected);
+    });
+    panels.forEach((panel) => {
+      panel.hidden = panel.dataset.roomPanel !== selected;
+    });
+  };
+
+  buttons.forEach((btn) => {
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      applyTab(btn.dataset.roomTab || "status");
+    });
+  });
+
+  const visibleButtons = buttons.filter((btn) => !btn.hidden);
+  if (nav) nav.hidden = visibleButtons.length < 2;
+
+  const activeVisible = visibleButtons.find((btn) => btn.classList.contains("active"))?.dataset.roomTab;
+  if (!visibleButtons.length) {
+    applyTab("status");
+    return;
+  }
+
+  applyTab(activeVisible || visibleButtons[0].dataset.roomTab || "status");
 };
 
 const setupEquipmentRulesPopup = () => {
@@ -1003,4 +1049,17 @@ const setupRoomRulesPopup = () => {
   modal.hidden = seen;
   document.body.classList.toggle("no-scroll", !seen);
 };
+
+Object.assign(globalThis, {
+  setupAnnouncementEditor,
+  renderAnnouncements,
+  renderDashboard,
+  renderHomeBottomInfo,
+  renderProfilePage,
+  renderRoomSlots,
+  setupRoomBookingUI,
+  setupRoomSectionTabs,
+  setupEquipmentRulesPopup,
+  setupRoomRulesPopup,
+});
 

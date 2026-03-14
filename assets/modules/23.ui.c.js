@@ -35,7 +35,7 @@ const setupResponsibleAdmin = () => {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!requireAdminAction()) return;
+    if (!requireCapability("responsible_manage")) return;
     const name = byId("responsibleName").value.trim();
     const email = byId("responsibleEmail").value.trim().toLowerCase();
     const imageUrl = byId("responsibleImageUrl").value.trim();

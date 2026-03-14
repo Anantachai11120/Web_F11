@@ -27,6 +27,7 @@ const sharedStateKeys = new Set([
   'lab_home_info',
   'lab_responsible_staff',
   'lab_room_closures',
+  'lab_room_zone_map',
   'lab_notifications',
 ]);
 const dbEnabled = Boolean(process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME);

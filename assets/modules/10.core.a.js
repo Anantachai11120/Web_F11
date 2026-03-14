@@ -83,9 +83,11 @@ const sharedStorageKeys = new Set([
   storageKeys.equipmentItems,
   storageKeys.equipmentTypes,
   storageKeys.announcements,
+  storageKeys.labProjects,
   storageKeys.homeInfo,
   storageKeys.responsibleStaff,
   storageKeys.roomClosures,
+  storageKeys.roomZoneMap,
   storageKeys.notifications,
 ]);
 
@@ -94,6 +96,88 @@ const sharedSyncState = {
   hydrated: false,
   queue: {},
   timer: null,
+};
+
+const normalizeUserRole = (role) => {
+  const raw = String(role || "").trim().toLowerCase();
+  if (raw === "admin") return "admin";
+  if (raw === "teacher") return "teacher";
+  return "user";
+};
+
+const userMergeKey = (user) => {
+  if (!user || typeof user !== "object") return "";
+  const username = String(user.username || "").trim().toLowerCase();
+  const email = String(user.email || "").trim().toLowerCase();
+  const studentId = String(user.studentId || "").trim().toLowerCase();
+  return username || email || studentId;
+};
+
+const mergeUserRecord = (baseUser, nextUser) => {
+  const base = baseUser && typeof baseUser === "object" ? { ...baseUser } : {};
+  const next = nextUser && typeof nextUser === "object" ? { ...nextUser } : {};
+  const merged = { ...base };
+  Object.entries(next).forEach(([key, value]) => {
+    const current = merged[key];
+    if (value === undefined || value === null) return;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      if (typeof current !== "string" || !current.trim()) {
+        merged[key] = value;
+      }
+      return;
+    }
+    if (typeof value === "number") {
+      if (!Number.isFinite(Number(current)) || Number(current) <= 0) {
+        merged[key] = value;
+      }
+      return;
+    }
+    if (typeof value === "boolean") {
+      merged[key] = Boolean(current) || value;
+      return;
+    }
+    if (!current) {
+      merged[key] = value;
+    }
+  });
+
+  const roleRank = { user: 0, teacher: 1, admin: 2 };
+  const baseRole = normalizeUserRole(base.role);
+  const nextRole = normalizeUserRole(next.role);
+  merged.role = roleRank[nextRole] > roleRank[baseRole] ? nextRole : baseRole;
+  merged.verified = Boolean(base.verified) || Boolean(next.verified);
+  merged.suspended = Boolean(base.suspended) || Boolean(next.suspended);
+  merged.roomQuotaDaily = Math.max(1, Number(base.roomQuotaDaily || 1), Number(next.roomQuotaDaily || 1));
+  merged.roomQuotaWeekly = Math.max(1, Number(base.roomQuotaWeekly || 3), Number(next.roomQuotaWeekly || 3));
+  return merged;
+};
+
+const mergeUsersCollection = (serverUsers, localUsers) => {
+  const mergedMap = new Map();
+  const ingest = (items = []) => {
+    items
+      .filter((item) => item && typeof item === "object")
+      .forEach((item) => {
+        const key = userMergeKey(item);
+        if (!key) return;
+        const current = mergedMap.get(key);
+        mergedMap.set(key, mergeUserRecord(current, item));
+      });
+  };
+  ingest(serverUsers);
+  ingest(localUsers);
+  return [...mergedMap.values()];
+};
+
+const mergeSharedValue = (key, serverValue, localValue) => {
+  if (key === storageKeys.users) {
+    const serverUsers = Array.isArray(serverValue) ? serverValue : [];
+    const localUsers = Array.isArray(localValue) ? localValue : [];
+    return mergeUsersCollection(serverUsers, localUsers);
+  }
+  return serverValue;
 };
 
 const pushSharedStateToServer = async () => {
@@ -149,12 +233,20 @@ const initSharedStorage = async () => {
       sharedStorageKeys.forEach((key) => {
         const hasServerValue = Object.prototype.hasOwnProperty.call(items, key);
         if (hasServerValue) {
+          let parsedLocal = null;
+          try {
+            const rawLocal = localStorage.getItem(key);
+            parsedLocal = rawLocal ? JSON.parse(rawLocal) : null;
+          } catch {
+            parsedLocal = null;
+          }
+          const mergedValue = mergeSharedValue(key, items[key], parsedLocal);
           // Server state wins: prevent stale pre-sync local queue from overwriting it.
           delete sharedSyncState.queue[key];
-          const nextRaw = JSON.stringify(items[key]);
+          const nextRaw = JSON.stringify(mergedValue);
           const prevRaw = localStorage.getItem(key);
           if (prevRaw !== nextRaw) changed = true;
-          writeLocalStorageSafe(key, items[key]);
+          writeLocalStorageSafe(key, mergedValue);
           return;
         }
         try {
@@ -541,33 +633,46 @@ const applyTranslations = () => {
       el.setAttribute("placeholder", staticLocalized.en[el.dataset.thPlaceholder]);
     }
   });
+
+  renderProfileMiniMenu();
 };
 
 const setupLanguageSelector = () => {
   const selects = document.querySelectorAll("#languageSelect");
   if (!selects.length) return;
+  const safeNamedCall = (name, ...args) => {
+    if (!name || typeof globalThis[name] !== "function") return;
+    try {
+      return globalThis[name](...args);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   selects.forEach((sel) => {
     sel.value = getLang();
     sel.addEventListener("change", (e) => {
       const nextLang = e.target.value === "en" ? "en" : "th";
       localStorage.setItem(storageKeys.lang, nextLang);
       applyTranslations();
-      renderDashboard();
-      renderAnnouncements();
-      renderRoomApproval();
-      renderAdminUsers();
-      renderAdminUserProfilePanel();
-      renderAdminEquipmentBorrowSummary();
-      renderBroadcastRecipientList();
-      renderAdminAnnouncements();
-      renderEquipmentTypeFilterOptions();
-      refreshEquipmentFilterLabels();
-      refreshSessionLabel();
+      safeNamedCall("renderDashboard");
+      safeNamedCall("renderAnnouncements");
+      safeNamedCall("renderRoomApproval");
+      safeNamedCall("renderAdminUsers");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderAdminEquipmentBorrowSummary");
+      safeNamedCall("renderBroadcastRecipientList");
+      safeNamedCall("renderAdminAnnouncements");
+      safeNamedCall("renderAdminLabProjects");
+      safeNamedCall("renderLabProjects");
+      safeNamedCall("renderEquipmentTypeFilterOptions");
+      safeNamedCall("refreshEquipmentFilterLabels");
+      safeNamedCall("refreshSessionLabel");
       ensureAdminAccess();
-      refreshCropStatusByState();
-      updateBookingAuthUI();
+      safeNamedCall("refreshCropStatusByState");
+      safeNamedCall("updateBookingAuthUI");
       updateNavAuthState();
       setupAuthNav();
+      safeNamedCall("renderRoomZoneMaps");
     });
   });
 };
@@ -633,15 +738,23 @@ const prefetchNavPages = () => {
 };
 
 const performLogout = ({ redirect = true } = {}) => {
+  const safeNamedCall = (name, ...args) => {
+    if (!name || typeof globalThis[name] !== "function") return;
+    try {
+      return globalThis[name](...args);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   localStorage.removeItem(storageKeys.session);
   setupAdminNav();
   setupAuthNav();
-  refreshSessionLabel();
+  safeNamedCall("refreshSessionLabel");
   lockAdminUiImmediately();
   ensureAdminAccess();
-  updateBookingAuthUI();
+  safeNamedCall("updateBookingAuthUI");
   updateNavAuthState();
-  renderAnnouncements();
+  safeNamedCall("renderAnnouncements");
   if (redirect) {
     const page = location.pathname.split("/").pop() || "index.html";
     if (page !== "login.html") {
@@ -666,6 +779,96 @@ const updateNavAuthState = () => {
       });
     }
   });
+  renderProfileMiniMenu();
+};
+
+const closeProfileMiniMenu = () => {
+  document.querySelectorAll(".nav-profile-shell.open").forEach((shell) => {
+    shell.classList.remove("open");
+  });
+};
+
+const renderProfileMiniMenu = () => {
+  const nav = document.querySelector(".nav");
+  if (!(nav instanceof HTMLElement)) return;
+  let shell = nav.querySelector(".nav-profile-shell");
+  const isLoggedIn = isLoggedInSession();
+  if (!isLoggedIn) {
+    if (shell) shell.hidden = true;
+    closeProfileMiniMenu();
+    return;
+  }
+
+  const user = getCurrentUser();
+  if (!shell) {
+    shell = document.createElement("div");
+    shell.className = "nav-profile-shell";
+    shell.hidden = true;
+    shell.innerHTML = `
+      <button type="button" class="nav-profile-trigger" aria-haspopup="menu" aria-expanded="false">
+        <img class="nav-profile-avatar" src="image/IconLab.png" alt="profile" />
+      </button>
+      <div class="nav-profile-dropdown" role="menu">
+        <button type="button" class="nav-profile-item" data-profile-menu="profile" role="menuitem"></button>
+        <button type="button" class="nav-profile-item danger" data-profile-menu="logout" role="menuitem"></button>
+      </div>
+    `;
+    nav.appendChild(shell);
+    const trigger = shell.querySelector(".nav-profile-trigger");
+    trigger?.addEventListener("click", (event) => {
+      event.preventDefault();
+      const willOpen = !shell.classList.contains("open");
+      closeProfileMiniMenu();
+      shell.classList.toggle("open", willOpen);
+      trigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    });
+    shell.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const actionEl = target.closest("[data-profile-menu]");
+      if (!(actionEl instanceof HTMLElement)) return;
+      const action = String(actionEl.dataset.profileMenu || "");
+      closeProfileMiniMenu();
+      const triggerEl = shell.querySelector(".nav-profile-trigger");
+      triggerEl?.setAttribute("aria-expanded", "false");
+      if (action === "profile") {
+        location.href = "profile.html";
+        return;
+      }
+      if (action === "logout") {
+        performLogout({ redirect: true });
+      }
+    });
+  }
+
+  const avatar = shell.querySelector(".nav-profile-avatar");
+  const trigger = shell.querySelector(".nav-profile-trigger");
+  const profileBtn = shell.querySelector('[data-profile-menu="profile"]');
+  const logoutBtn = shell.querySelector('[data-profile-menu="logout"]');
+  if (avatar instanceof HTMLImageElement) {
+    avatar.src = user?.profileImage || "image/IconLab.png";
+    avatar.alt = user?.name || user?.username || "profile";
+  }
+  if (trigger instanceof HTMLElement) {
+    trigger.setAttribute("aria-label", user?.name || user?.username || t("navProfile"));
+  }
+  if (profileBtn instanceof HTMLElement) profileBtn.textContent = t("navProfile");
+  if (logoutBtn instanceof HTMLElement) logoutBtn.textContent = t("navLogout");
+  shell.hidden = false;
+};
+
+const setupProfileMiniMenuDismiss = () => {
+  if (document.body?.dataset.profileMenuBound === "1") return;
+  if (document.body) document.body.dataset.profileMenuBound = "1";
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.closest(".nav-profile-shell")) return;
+    closeProfileMiniMenu();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeProfileMiniMenu();
+  });
 };
 
 const setFooterYear = () => {
@@ -682,7 +885,9 @@ const isLoggedInSession = () => {
 
 const getSessionRole = () => {
   const session = getSession();
-  return session?.role === "admin" ? "admin" : "user";
+  if (session?.role === "admin") return "admin";
+  if (session?.role === "teacher") return "teacher";
+  return "user";
 };
 
 const syncRootAuthState = () => {
@@ -697,7 +902,7 @@ const syncRootAuthState = () => {
   root.dataset.role = getSessionRole();
 };
 
-const getUsers = () => load(storageKeys.users);
+const getUsers = () => load(storageKeys.users, []);
 
 const getRoomQuota = (user) => {
   const daily = Math.max(1, Number(user?.roomQuotaDaily || 1));
@@ -721,7 +926,17 @@ const getCurrentUser = () => {
   };
 };
 
-const roleLabel = (role) => (role === "admin" ? t("roleAdmin") : t("roleUser"));
+Object.assign(globalThis, {
+  refreshCropStatusByState,
+  getCurrentUser,
+});
+
+const roleLabel = (role) =>
+  role === "admin"
+    ? t("roleAdmin")
+    : role === "teacher"
+      ? (t("roleTeacher") || (getLang() === "th" ? "อาจารย์" : "teacher"))
+      : t("roleUser");
 const statusLabel = (status) =>
   status === "approved"
     ? t("statusApproved")
@@ -749,6 +964,60 @@ const isAdminSession = () => {
   return Boolean(user && user.role === "admin");
 };
 
+const isTeacherSession = () => {
+  if (getSessionRole() === "teacher") return true;
+  const user = getCurrentUser();
+  return Boolean(user && user.role === "teacher");
+};
+
+const isPrimaryAdminSession = () => {
+  const session = getSession();
+  const username = String(session?.username || "").trim().toLowerCase();
+  return username === "anantachai2000";
+};
+
+const canAccessAdminPage = () => isAdminSession() || isTeacherSession();
+
+const adminCapabilityMatrix = {
+  admin: new Set([
+    "announcement_manage",
+    "room_approval_manage",
+    "room_closure_manage",
+    "zone_manage",
+    "responsible_manage",
+    "equipment_summary_manage",
+    "data_export_manage",
+    "email_notify_manage",
+    "user_view",
+    "user_suspend_manage",
+    "user_quota_manage",
+    "user_delete_manage",
+    "user_verify_manage",
+    "role_promote_admin",
+    "role_promote_teacher",
+  ]),
+  teacher: new Set([
+    "announcement_manage",
+    "room_approval_manage",
+    "responsible_manage",
+    "equipment_summary_manage",
+    "data_export_manage",
+    "user_view",
+    "user_suspend_manage",
+    "user_quota_manage",
+  ]),
+  user: new Set(),
+};
+
+const hasAdminCapability = (capability) => {
+  const role = getSessionRole();
+  const direct = adminCapabilityMatrix[role];
+  if (direct?.has(capability)) return true;
+  const user = getCurrentUser();
+  const fallbackRole = user?.role || "user";
+  return Boolean(adminCapabilityMatrix[fallbackRole]?.has(capability));
+};
+
 const lockAdminUiImmediately = () => {
   byId("adminPanel") && (byId("adminPanel").hidden = true);
   byId("adminGate") && (byId("adminGate").hidden = false);
@@ -763,12 +1032,41 @@ const requireAdminAction = () => {
   return false;
 };
 
+const requireCapability = (capability) => {
+  if (hasAdminCapability(capability)) return true;
+  lockAdminUiImmediately();
+  ensureAdminAccess();
+  return false;
+};
+
+const canAccessAdminTab = (tabKey) => {
+  const key = String(tabKey || "").trim();
+  if (!key) return false;
+  if (isAdminSession()) return true;
+  if (!canAccessAdminPage()) return false;
+  const teacherTabs = new Set([
+    "announcement",
+    "roomApproval",
+    "adminRole",
+    "responsibleStaff",
+    "equipmentSummary",
+    "dataExport",
+  ]);
+  return teacherTabs.has(key);
+};
+
 const setupAdminNav = () => {
   const adminLinks = document.querySelectorAll('.nav a[href="admin.html"], .admin-only');
   if (!adminLinks.length) return;
-  const canShow = getSessionRole() === "admin" || isAdminSession();
+  const canShow = canAccessAdminPage();
   adminLinks.forEach((link) => {
     link.hidden = !canShow;
+    if (canShow && link.matches('.nav a[href="admin.html"]')) {
+      link.textContent =
+        isTeacherSession()
+          ? (getLang() === "th" ? "จัดการสิทธิ์" : "Permissions")
+          : t("navAdmin");
+    }
   });
   syncRootAuthState();
 };
@@ -781,6 +1079,7 @@ const setupAuthNav = () => {
     link.hidden = !isLoggedIn;
   });
   syncRootAuthState();
+  renderProfileMiniMenu();
 };
 
 const ensureAdminAccess = () => {
@@ -789,7 +1088,7 @@ const ensureAdminAccess = () => {
     location.href = "login.html";
     return;
   }
-  if (page === "admin.html" && !isAdminSession()) {
+  if (page === "admin.html" && !canAccessAdminPage()) {
     location.href = "login.html";
     return;
   }
@@ -798,7 +1097,7 @@ const ensureAdminAccess = () => {
   const gate = byId("adminGate");
   const panel = byId("adminPanel");
 
-  if (isAdminSession()) {
+  if (canAccessAdminPage()) {
     if (gate) gate.hidden = true;
     if (panel) panel.hidden = false;
     return;

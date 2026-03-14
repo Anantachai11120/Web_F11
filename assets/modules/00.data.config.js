@@ -6,10 +6,12 @@ const storageKeys = {
   equipmentTypes: "lab_equipment_types",
   session: "lab_session",
   announcements: "lab_announcements",
+  labProjects: "lab_projects",
   lang: "lab_lang",
   homeInfo: "lab_home_info",
   responsibleStaff: "lab_responsible_staff",
   roomClosures: "lab_room_closures",
+  roomZoneMap: "lab_room_zone_map",
   notifications: "lab_notifications",
   meta: "lab_meta",
 };

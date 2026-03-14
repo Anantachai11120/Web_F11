@@ -4,6 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LabFlow | จองห้อง</title>
+  <script>
+    (function () {
+      try {
+        var raw = localStorage.getItem("lab_session");
+        var session = raw ? JSON.parse(raw) : null;
+        var role = session && session.username ? String(session.role || "user").toLowerCase() : "guest";
+        document.documentElement.dataset.auth = session && session.username ? "in" : "out";
+        document.documentElement.dataset.role = role;
+      } catch (_error) {
+        document.documentElement.dataset.auth = "out";
+        document.documentElement.dataset.role = "guest";
+      }
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -51,9 +65,19 @@
         </div>
       </section>
 
-      <section id="roomMainGrid" class="grid grid-2">
-        <article id="roomBookingCard" class="card" hidden>
-          <h2 data-i18n="roomRequesterSectionTitle">ข้อมูลผู้ขอใช้งาน</h2>
+      <section class="card room-section-nav">
+        <div class="room-tabbar">
+          <button type="button" class="room-tab-btn" data-room-tab="booking" hidden>
+            <span data-i18n="roomRequesterSectionTitle">ข้อมูลผู้ขอใช้งาน</span>
+          </button>
+          <button type="button" class="room-tab-btn active" data-room-tab="status" hidden>
+            <span data-i18n="roomStatusSectionTitle">สถานะการจอง</span>
+          </button>
+        </div>
+      </section>
+
+      <section id="roomMainGrid" class="grid room-section-stack">
+        <article id="roomBookingCard" class="card room-section-panel" data-room-panel="booking" hidden>
           <form id="roomBookingForm">
             <input id="roomFixed" type="hidden" value="Lab-F11" />
 
@@ -84,6 +108,17 @@
               <option>13:00 - 17:00</option>
             </select>
 
+            <section class="room-zone-booking-panel">
+              <div class="room-zone-panel-head">
+                <h3 id="roomZoneBookingTitle">จองพื้นที่ใช้งาน</h3>
+                <p id="roomZoneBookingHint" class="muted">เลือกโซนจากแผนผังด้านล่าง</p>
+              </div>
+              <input id="selectedRoomZone" type="hidden" />
+              <div id="roomZoneBookingMap" class="room-zone-map-shell"></div>
+              <div id="roomZoneBookingNotice" class="room-zone-selection-note muted">ยังไม่ได้เลือกโซน</div>
+              <div id="roomZoneBookingDetail" class="room-slot-detail muted">คลิกโซนเพื่อดูภาพตัวอย่างและรายละเอียดของพื้นที่</div>
+            </section>
+
             <label>บุคลากรผู้รับผิดชอบ</label>
             <input id="selectedResponsibleId" type="hidden" />
             <div id="responsibleOptions" class="responsible-grid"></div>
@@ -94,8 +129,7 @@
           </form>
         </article>
 
-        <article class="card room-status-card">
-          <h2 data-i18n="roomStatusSectionTitle">สถานะการจอง</h2>
+        <article class="card room-status-card room-section-panel" data-room-panel="status">
           <p class="muted room-status-subtitle" data-i18n="roomStatusSectionHint">เลือกวันและเวลาเพื่อดูจำนวนที่จองแล้ว และจำนวนที่ยังว่าง</p>
           <div class="room-filter-grid">
             <div class="room-filter-item">
@@ -113,11 +147,19 @@
           </div>
 
           <div id="roomDailySummary" class="room-slot-detail muted">สรุปผลรายวันจะแสดงเมื่อเลือกวันที่</div>
+          <section class="room-zone-status-panel">
+            <div class="room-zone-panel-head">
+              <h3 id="roomZoneStatusTitle">สถานะพื้นที่ใช้งาน</h3>
+              <p id="roomZoneStatusHint" class="muted">คลิกโซนเพื่อดูรายละเอียดการจองของพื้นที่นั้น</p>
+            </div>
+            <div id="roomZoneStatusMap" class="room-zone-map-shell"></div>
+            <div id="roomZoneStatusDetail" class="room-slot-detail muted">เลือกวันและเวลา แล้วคลิกโซนเพื่อดูรายละเอียด</div>
+          </section>
           <div id="roomSlotsGrid" class="room-slots-grid"></div>
           <div id="roomSlotDetail" class="room-slot-detail muted">โฮเวอร์ไอคอนเพื่อดูชื่อผู้จอง และคลิกเพื่อดูรายละเอียด</div>
           <div class="room-slot-legend">
             <span><img src="image/userG.png" alt="empty" /> <span data-i18n="roomLegendAvailable">ว่าง</span></span>
-            <span id="roomLegendMine"><img src="image/userGre.png" alt="self" /> <span data-i18n="roomLegendMine">คุณจอง</span></span>
+            <span id="roomLegendMine" hidden><img src="image/userGre.png" alt="self" /> <span data-i18n="roomLegendMine">คุณจอง</span></span>
             <span><img src="image/userR.png" alt="others" /> <span data-i18n="roomLegendBooked">จอง</span></span>
           </div>
         </article>
@@ -144,6 +186,14 @@
         จึงจะถือว่าได้รับอนุญาตอย่างสมบูรณ์</span>
       </p>
       <button id="roomRulesAcceptBtn" type="button" data-i18n="acceptBtn">ยอมรับ</button>
+    </div>
+  </div>
+
+  <div id="roomZoneImageModal" class="rules-modal-backdrop room-zone-modal-backdrop" hidden>
+    <div class="rules-modal room-zone-modal">
+      <button id="roomZoneImageModalClose" type="button" class="modal-close-btn" aria-label="Close">x</button>
+      <h3 id="roomZoneImageModalTitle">ภาพพื้นที่จริงของโซน</h3>
+      <div id="roomZoneImageModalBody" class="room-zone-modal-body"></div>
     </div>
   </div>
 

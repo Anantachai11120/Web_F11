@@ -1,16 +1,40 @@
+function safeCall(fn, ...args) {
+  if (typeof fn !== "function") return;
+  try {
+    return fn(...args);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function safeNamedCall(name, ...args) {
+  if (!name || typeof globalThis[name] !== "function") return;
+  try {
+    return globalThis[name](...args);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 const adminActions = () => {
   if (!isCurrentPage("admin.html")) return;
-  if (!isAdminSession()) return;
+  if (!canAccessAdminPage()) return;
   setupAdminSectionTabs();
   setupAdminDataExport();
   setupAdminRoomClosureForm();
+  if (typeof setupRoomZoneAdminEditor === "function") {
+    setupRoomZoneAdminEditor();
+  }
+  if (typeof setupLabProjectsAdmin === "function") {
+    setupLabProjectsAdmin();
+  }
 
   const form = byId("announcementForm");
   const broadcastForm = byId("adminBroadcastForm");
   const broadcastGroup = byId("broadcastGroup");
   form?.addEventListener("submit", (e) => {
     e.preventDefault();
-    if (!requireAdminAction()) return;
+    if (!requireCapability("announcement_manage")) return;
     const type = byId("announceType").value;
     const title = byId("announceTitle").value.trim();
     const content = byId("announceContent").value.trim();
@@ -53,14 +77,14 @@ const adminActions = () => {
     if (cropX) cropX.value = "0";
     if (cropY) cropY.value = "0";
     drawCropCanvas();
-    renderAdminAnnouncements();
-    renderAnnouncements();
+    safeNamedCall("renderAdminAnnouncements");
+    safeNamedCall("renderAnnouncements");
   });
 
   if (broadcastGroup && !broadcastGroup.dataset.bound) {
     broadcastGroup.dataset.bound = "1";
     broadcastGroup.addEventListener("change", () => {
-      renderBroadcastRecipientList();
+      safeNamedCall("renderBroadcastRecipientList");
     });
   }
 
@@ -68,7 +92,7 @@ const adminActions = () => {
     broadcastForm.dataset.bound = "1";
     broadcastForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (!requireAdminAction()) return;
+      if (!requireCapability("email_notify_manage")) return;
       const notice = byId("adminBroadcastNotice");
       const subject = byId("broadcastSubject")?.value?.trim() || "";
       const message = byId("broadcastMessage")?.value?.trim() || "";
@@ -95,11 +119,11 @@ const adminActions = () => {
   }
 
   document.addEventListener("click", (e) => {
-    if (!requireAdminAction()) return;
     const target = e.target;
     if (!(target instanceof HTMLElement)) return;
 
     if (target.dataset.approveRoom !== undefined) {
+      if (!requireCapability("room_approval_manage")) return;
       const index = Number(target.dataset.approveRoom);
       const rooms = sortRoomBookingsByUsageDesc(load(storageKeys.roomBookings));
       if (!rooms[index]) return;
@@ -108,15 +132,16 @@ const adminActions = () => {
       rooms[index].status = "approved";
       rooms[index].approvedBy = getSession().username;
       save(storageKeys.roomBookings, rooms);
-      renderRoomApproval();
-      renderDashboard();
-      renderAdminUserProfilePanel();
-      renderProfilePage();
-      renderRoomSlots();
+      safeNamedCall("renderRoomApproval");
+      safeNamedCall("renderDashboard");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderProfilePage");
+      safeNamedCall("renderRoomSlots");
       return;
     }
 
     if (target.dataset.rejectRoom !== undefined) {
+      if (!requireCapability("room_approval_manage")) return;
       const index = Number(target.dataset.rejectRoom);
       const rooms = sortRoomBookingsByUsageDesc(load(storageKeys.roomBookings));
       if (!rooms[index]) return;
@@ -125,29 +150,91 @@ const adminActions = () => {
       rooms[index].status = "rejected";
       rooms[index].approvedBy = getSession().username;
       save(storageKeys.roomBookings, rooms);
-      renderRoomApproval();
-      renderDashboard();
-      renderAdminUserProfilePanel();
-      renderProfilePage();
-      renderRoomSlots();
+      safeNamedCall("renderRoomApproval");
+      safeNamedCall("renderDashboard");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderProfilePage");
+      safeNamedCall("renderRoomSlots");
+      return;
+    }
+
+    if (target.dataset.setUserRole !== undefined) {
+      if (!isPrimaryAdminSession()) return;
+      const index = Number(target.dataset.setUserRole);
+      const nextRole = normalizeUserRole(target.dataset.roleValue);
+      const users = load(storageKeys.users, []);
+      if (!users[index]) return;
+      const pickedUsername = String(users[index].username || "").trim().toLowerCase();
+      if (pickedUsername === "anantachai2000") return;
+      users[index].role = nextRole;
+      users[index].verified = true;
+      save(storageKeys.users, users);
+      const session = getSession();
+      if (session && session.username === users[index].username) {
+        save(storageKeys.session, {
+          ...session,
+          role: nextRole,
+        });
+        setupAdminNav();
+        updateNavAuthState();
+      }
+      safeNamedCall("renderAdminUsers");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderBroadcastRecipientList");
+      safeNamedCall("renderProfilePage");
       return;
     }
 
     if (target.dataset.promoteUser !== undefined) {
+      if (!requireCapability("role_promote_admin")) return;
       const index = Number(target.dataset.promoteUser);
-      const users = load(storageKeys.users);
+      const users = load(storageKeys.users, []);
       if (!users[index]) return;
 
       users[index].role = "admin";
       users[index].verified = true;
       save(storageKeys.users, users);
-      renderAdminUsers();
-      renderAdminUserProfilePanel();
-      renderBroadcastRecipientList();
+      const session = getSession();
+      if (session && session.username === users[index].username) {
+        save(storageKeys.session, {
+          ...session,
+          role: "admin",
+        });
+        setupAdminNav();
+        updateNavAuthState();
+      }
+      safeNamedCall("renderAdminUsers");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderBroadcastRecipientList");
+      return;
+    }
+
+    if (target.dataset.promoteTeacher !== undefined) {
+      if (!requireCapability("role_promote_teacher")) return;
+      const index = Number(target.dataset.promoteTeacher);
+      const users = load(storageKeys.users, []);
+      if (!users[index]) return;
+
+      users[index].role = "teacher";
+      users[index].verified = true;
+      save(storageKeys.users, users);
+      const session = getSession();
+      if (session && session.username === users[index].username) {
+        save(storageKeys.session, {
+          ...session,
+          role: "teacher",
+        });
+        setupAdminNav();
+        updateNavAuthState();
+      }
+      safeNamedCall("renderAdminUsers");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderBroadcastRecipientList");
       return;
     }
 
     if (target.dataset.addQuotaUser !== undefined) {
+      if (!requireCapability("user_quota_manage")) return;
       const index = Number(target.dataset.addQuotaUser);
       openAdminQuotaModal(index);
       return;
@@ -155,22 +242,25 @@ const adminActions = () => {
 
     if (target.dataset.verifyUser !== undefined) {
       const index = Number(target.dataset.verifyUser);
-      const users = load(storageKeys.users);
+      const users = load(storageKeys.users, []);
       if (!users[index]) return;
       const user = users[index];
       if (!user.verified) {
+        if (!requireCapability("user_verify_manage")) return;
         user.verified = true;
         user.suspended = false;
       } else {
+        if (!requireCapability("user_suspend_manage")) return;
         user.suspended = !Boolean(user.suspended);
       }
       save(storageKeys.users, users);
-      renderAdminUsers();
-      renderAdminUserProfilePanel();
+      safeNamedCall("renderAdminUsers");
+      safeNamedCall("renderAdminUserProfilePanel");
       return;
     }
 
     if (target.dataset.remindReturn !== undefined) {
+      if (!requireCapability("equipment_summary_manage")) return;
       const bookingId = String(target.dataset.remindReturn || "").trim();
       const notice = byId("adminEquipmentNotice");
       if (!bookingId) return;
@@ -202,16 +292,18 @@ const adminActions = () => {
     }
 
     if (target.dataset.viewUserProfile !== undefined) {
+      if (!requireCapability("user_view")) return;
       const index = Number(target.dataset.viewUserProfile);
-      const users = load(storageKeys.users);
+      const users = load(storageKeys.users, []);
       const picked = users[index];
       if (!picked) return;
       selectedAdminUserProfileKey = picked.username || picked.email || "";
-      renderAdminUserProfilePanel();
+      safeNamedCall("renderAdminUserProfilePanel");
       return;
     }
 
     if (target.dataset.deleteAnnouncement !== undefined) {
+      if (!requireCapability("announcement_manage")) return;
       if (!window.confirm(t("confirmDeleteAnnouncement"))) return;
       const index = Number(target.dataset.deleteAnnouncement);
       const list = load(storageKeys.announcements).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
@@ -219,43 +311,46 @@ const adminActions = () => {
 
       list.splice(index, 1);
       save(storageKeys.announcements, list);
-      renderAdminAnnouncements();
-      renderAnnouncements();
+      safeNamedCall("renderAdminAnnouncements");
+      safeNamedCall("renderAnnouncements");
       return;
     }
 
     if (target.dataset.deleteRoomClosure !== undefined) {
+      if (!requireCapability("room_closure_manage")) return;
       if (!window.confirm(t("confirmDeleteRoomClosure"))) return;
       const id = String(target.dataset.deleteRoomClosure || "").trim();
       const list = getRoomClosures().filter((item) => String(item.id || "") !== id);
       save(storageKeys.roomClosures, list);
-      renderAdminRoomClosures();
-      renderRoomSlots();
+      safeNamedCall("renderAdminRoomClosures");
+      safeNamedCall("renderRoomSlots");
       return;
     }
 
     if (target.dataset.deleteResponsible !== undefined) {
+      if (!requireCapability("responsible_manage")) return;
       if (!window.confirm(t("confirmDeleteResponsible"))) return;
       const index = Number(target.dataset.deleteResponsible);
       const list = getResponsibleStaff();
       if (!list[index]) return;
       list.splice(index, 1);
       save(storageKeys.responsibleStaff, list);
-      renderResponsibleAdminList();
+      safeNamedCall("renderResponsibleAdminList");
       const selected = byId("selectedResponsibleId");
       if (selected && selected.value && !list.some((s) => s.id === selected.value)) {
         selected.value = list[0]?.id || "";
       }
-      renderResponsibleOptions();
-      renderEqResponsibleOptions();
-      renderBroadcastRecipientList();
+      safeNamedCall("renderResponsibleOptions");
+      safeNamedCall("renderEqResponsibleOptions");
+      safeNamedCall("renderBroadcastRecipientList");
       return;
     }
 
     if (target.dataset.deleteUser !== undefined) {
+      if (!requireCapability("user_delete_manage")) return;
       if (!window.confirm(t("confirmDeleteUser"))) return;
       const index = Number(target.dataset.deleteUser);
-      const users = load(storageKeys.users);
+      const users = load(storageKeys.users, []);
       const selected = users[index];
       if (!selected) return;
       const current = getCurrentUser();
@@ -268,28 +363,40 @@ const adminActions = () => {
       if (selectedAdminUserProfileKey && (selected.username === selectedAdminUserProfileKey || selected.email === selectedAdminUserProfileKey)) {
         selectedAdminUserProfileKey = "";
       }
-      renderAdminUsers();
-      renderAdminUserProfilePanel();
-      renderResponsibleOptions();
-      renderEqResponsibleOptions();
-      renderBroadcastRecipientList();
+      safeNamedCall("renderAdminUsers");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderResponsibleOptions");
+      safeNamedCall("renderEqResponsibleOptions");
+      safeNamedCall("renderBroadcastRecipientList");
     }
   });
 
-  renderRoomApproval();
-  renderAdminUsers();
-  renderAdminUserProfilePanel();
-  renderAdminEquipmentBorrowSummary();
-  renderBroadcastRecipientList();
-  renderAdminAnnouncements();
-  renderResponsibleAdminList();
-  renderAdminRoomClosures();
+  safeNamedCall("renderRoomApproval");
+  safeNamedCall("renderAdminUsers");
+  safeNamedCall("renderAdminUserProfilePanel");
+  safeNamedCall("renderAdminEquipmentBorrowSummary");
+  safeNamedCall("renderBroadcastRecipientList");
+  safeNamedCall("renderAdminAnnouncements");
+  if (typeof renderAdminLabProjects === "function") {
+    safeNamedCall("renderAdminLabProjects");
+  }
+  safeNamedCall("renderResponsibleAdminList");
+  safeNamedCall("renderAdminRoomClosures");
 };
+
+const isAnyCurrentPage = (...pages) => pages.some((page) => isCurrentPage(page));
+
+const syncApprovalsAndReturns = () =>
+  Promise.all([
+    typeof syncResponsibleApprovals === "function" ? syncResponsibleApprovals() : Promise.resolve(),
+    typeof syncEquipmentReturns === "function" ? syncEquipmentReturns() : Promise.resolve(),
+  ]);
 
 const bootstrapApp = async () => {
   setupClientHardening();
   applyTranslations();
   setupLanguageSelector();
+  setupProfileMiniMenuDismiss();
   activeNav();
   setupFastNavUX();
   prefetchNavPages();
@@ -299,9 +406,10 @@ const bootstrapApp = async () => {
   setupAdminNav();
   document.documentElement.classList.add("i18n-ready");
 
-  const sharedChanged = await initSharedStorage();
+  const sharedChangedPromise = initSharedStorage();
 
   seedAdmin();
+  seedDemoUser();
   seedHomeInfo();
   seedResponsibleStaff();
   seedEquipmentItems();
@@ -311,96 +419,133 @@ const bootstrapApp = async () => {
   updateVisitorCounters();
   normalizeUsers();
   ensureAdminAccess();
-  renderAnnouncements();
-  renderHomeBottomInfo();
-  renderProfilePage();
-  registerForm();
-  verifyForm();
-  loginForm();
-  updateBookingAuthUI();
-  setupRoomBookingUI();
-  setupEquipmentBookingUI();
-  setupCropTool();
-  setupEquipmentCropTool();
-  refreshCropStatusByState();
-  adminActions();
-  setupResponsibleAdmin();
-  setupEquipmentAdminTools();
-  setupHomeBottomEditor();
-  setupAnnouncementEditor();
-  setupAdminQuotaModal();
-  bookingForm({
-    formId: "roomBookingForm",
-    noticeId: "roomNotice",
-    key: storageKeys.roomBookings,
-    mapData: () => {
-      const me = getCurrentUser();
-      const requesterName = byId("roomRequesterName")?.value?.trim() || "";
-      const member1 = byId("roomMember1")?.value?.trim() || "";
-      const member2 = byId("roomMember2")?.value?.trim() || "";
-      const purposeType =
-        document.querySelector('input[name="roomPurposeType"]:checked')?.value || "";
-      const purposeOther = byId("roomPurposeOther")?.value?.trim() || "";
-      const otherPurpose = "\u0E2D\u0E37\u0E48\u0E19\u0E46";
-      const purpose = purposeType === otherPurpose ? (purposeOther || otherPurpose) : purposeType;
-      const participantCount =
-        [requesterName, member1, member2].filter((v) => Boolean(v)).length || 1;
-      return {
-        requesterName,
-        member1,
-        member2,
-        name: requesterName,
-        username: me?.username || "",
-        email: me?.email || "",
-        room: byId("roomFixed")?.value || "Lab-F11",
-        date: byId("roomDate")?.value || "",
-        timeSlot: byId("roomTime")?.value || "",
-        purpose,
-        purposeType,
-        responsibleId: byId("selectedResponsibleId")?.value || "",
-        participantCount,
-      };
-    },
-  });
 
-  Promise.all([syncResponsibleApprovals(), syncEquipmentReturns()]).then(() => {
-    renderDashboard();
-    renderRoomApproval();
-    renderRoomSlots();
-    renderProfilePage();
-  });
+  if (isCurrentPage("index.html")) {
+    safeNamedCall("renderAnnouncements");
+    safeNamedCall("renderLabProjects");
+    safeNamedCall("renderHomeBottomInfo");
+    safeNamedCall("renderDashboard");
+    safeCall(setupHomeBottomEditor);
+  }
 
-  setInterval(() => {
-    Promise.all([syncResponsibleApprovals(), syncEquipmentReturns()]).then(() => {
-      renderDashboard();
-      renderRoomApproval();
-      renderRoomSlots();
-      renderProfilePage();
+  if (isCurrentPage("profile.html")) {
+    safeNamedCall("renderProfilePage");
+  }
+
+  if (isCurrentPage("register.html")) safeCall(registerForm);
+  if (isCurrentPage("verify.html")) safeCall(verifyForm);
+  if (isCurrentPage("login.html")) safeCall(loginForm);
+
+  if (isCurrentPage("rooms.html")) {
+    safeCall(updateBookingAuthUI);
+    safeCall(setupRoomBookingUI);
+    safeCall(bookingForm, {
+      formId: "roomBookingForm",
+      noticeId: "roomNotice",
+      key: storageKeys.roomBookings,
+      mapData: () => {
+        const me = getCurrentUser();
+        const requesterName = byId("roomRequesterName")?.value?.trim() || "";
+        const member1 = byId("roomMember1")?.value?.trim() || "";
+        const member2 = byId("roomMember2")?.value?.trim() || "";
+        const purposeType =
+          document.querySelector('input[name="roomPurposeType"]:checked')?.value || "";
+        const purposeOther = byId("roomPurposeOther")?.value?.trim() || "";
+        const otherPurpose = "\u0E2D\u0E37\u0E48\u0E19\u0E46";
+        const purpose = purposeType === otherPurpose ? (purposeOther || otherPurpose) : purposeType;
+        const participantCount =
+          [requesterName, member1, member2].filter((v) => Boolean(v)).length || 1;
+        return {
+          requesterName,
+          member1,
+          member2,
+          name: requesterName,
+          username: me?.username || "",
+          email: me?.email || "",
+          room: byId("roomFixed")?.value || "Lab-F11",
+          date: byId("roomDate")?.value || "",
+          timeSlot: byId("roomTime")?.value || "",
+          purpose,
+          purposeType,
+          roomZone: String(byId("selectedRoomZone")?.value || "").trim(),
+          roomZoneLabel: getRoomZoneById(String(byId("selectedRoomZone")?.value || "").trim())?.label || "",
+          responsibleId: byId("selectedResponsibleId")?.value || "",
+          participantCount,
+        };
+      },
     });
-  }, 15000);
+    safeNamedCall("renderRoomSlots");
+  }
 
-  if (!sharedChanged) return;
+  if (isCurrentPage("equipment.html")) {
+    safeCall(updateBookingAuthUI);
+    safeNamedCall("setupEquipmentBookingUI");
+  }
+
+  if (isCurrentPage("admin.html")) {
+    safeCall(setupCropTool);
+    safeCall(setupEquipmentCropTool);
+    safeCall(refreshCropStatusByState);
+    safeCall(setupResponsibleAdmin);
+    safeCall(setupEquipmentAdminTools);
+    safeCall(setupHomeBottomEditor);
+    safeCall(setupAnnouncementEditor);
+    safeCall(setupAdminQuotaModal);
+    safeNamedCall("renderAdminUsers");
+    safeNamedCall("renderAdminUserProfilePanel");
+    safeNamedCall("renderAdminEquipmentBorrowSummary");
+    safeNamedCall("renderBroadcastRecipientList");
+    safeNamedCall("renderAdminAnnouncements");
+    safeNamedCall("renderResponsibleAdminList");
+    safeNamedCall("renderAdminRoomClosures");
+    safeCall(adminActions);
+  }
+
+  if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html", "index.html")) {
+    syncApprovalsAndReturns().then(() => {
+      safeNamedCall("renderDashboard");
+      safeNamedCall("renderRoomApproval");
+      safeNamedCall("renderRoomSlots");
+      safeNamedCall("renderProfilePage");
+    });
+
+    setInterval(() => {
+      syncApprovalsAndReturns().then(() => {
+        safeNamedCall("renderDashboard");
+        safeNamedCall("renderRoomApproval");
+        safeNamedCall("renderRoomSlots");
+        safeNamedCall("renderProfilePage");
+      });
+    }, 15000);
+  }
+
+  const sharedChanged = await sharedChangedPromise;
+  seedAdmin();
+  seedDemoUser();
   normalizeUsers();
   updateNavAuthState();
   setupAuthNav();
   setupAdminNav();
-  renderDashboard();
-  renderAnnouncements();
-  renderHomeBottomInfo();
-  renderProfilePage();
-  renderRoomSlots();
-  renderRoomApproval();
-  renderResponsibleOptions();
-  renderEqResponsibleOptions();
-  renderEquipmentCatalog();
-  renderSelectedEquipmentList();
-  renderAdminUsers();
-  renderAdminUserProfilePanel();
-  renderAdminEquipmentBorrowSummary();
-  renderBroadcastRecipientList();
-  renderAdminAnnouncements();
-  renderResponsibleAdminList();
-  renderAdminRoomClosures();
+  safeNamedCall("renderDashboard");
+  safeNamedCall("renderAnnouncements");
+  safeNamedCall("renderLabProjects");
+  safeNamedCall("renderHomeBottomInfo");
+  safeNamedCall("renderProfilePage");
+  safeNamedCall("renderRoomSlots");
+  safeNamedCall("renderRoomApproval");
+  safeNamedCall("renderResponsibleOptions");
+  safeNamedCall("renderEqResponsibleOptions");
+  if (sharedChanged && isCurrentPage("equipment.html")) {
+    safeNamedCall("renderEquipmentCatalog");
+    safeNamedCall("renderSelectedEquipmentList");
+  }
+  safeNamedCall("renderAdminUsers");
+  safeNamedCall("renderAdminUserProfilePanel");
+  safeNamedCall("renderAdminEquipmentBorrowSummary");
+  safeNamedCall("renderBroadcastRecipientList");
+  safeNamedCall("renderAdminAnnouncements");
+  safeNamedCall("renderResponsibleAdminList");
+  safeNamedCall("renderAdminRoomClosures");
 };
 
 bootstrapApp();

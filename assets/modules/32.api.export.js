@@ -272,7 +272,7 @@ const setupAdminDataExport = () => {
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    if (!requireAdminAction()) return;
+    if (!requireCapability("data_export_manage")) return;
     const format = String(e.submitter?.dataset?.exportFormat || "csv").toLowerCase();
     const dataset = String(datasetSelect.value || "users");
     const period = getPeriodFromForm();
@@ -303,3 +303,5 @@ const setupAdminDataExport = () => {
     setNotice(notice, t("adminExportDone", { format: "CSV", count: filteredRows.length }));
   });
 };
+
+globalThis.setupAdminDataExport = setupAdminDataExport;

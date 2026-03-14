@@ -14,12 +14,16 @@ const updateBookingAuthUI = () => {
 
   if (roomForm) {
     if (roomCard) roomCard.hidden = !loggedIn;
-    if (roomMainGrid) roomMainGrid.classList.toggle("single-col", !loggedIn);
     if (roomLegendMine) roomLegendMine.hidden = !loggedIn;
+    const roomBookingTab = document.querySelector('[data-room-tab="booking"]');
+    const roomStatusTab = document.querySelector('[data-room-tab="status"]');
+    if (roomBookingTab instanceof HTMLElement) roomBookingTab.hidden = !loggedIn;
+    if (roomStatusTab instanceof HTMLElement) roomStatusTab.hidden = !loggedIn;
     const submit = roomForm.querySelector('button[type="submit"]');
     if (submit) submit.disabled = !loggedIn;
     if (roomHint) roomHint.textContent = loggedIn ? "" : t("loginRequiredToBook");
     setupRoomRulesPopup();
+    if (typeof setupRoomSectionTabs === "function") setupRoomSectionTabs();
   }
   if (eqForm) {
     if (eqCard) eqCard.hidden = !loggedIn;
@@ -49,3 +53,5 @@ const updateBookingAuthUI = () => {
     setupEquipmentRulesPopup();
   }
 };
+
+globalThis.updateBookingAuthUI = updateBookingAuthUI;

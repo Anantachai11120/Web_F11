@@ -15,6 +15,42 @@ const normalizeEquipmentItems = () =>
     usageGuide: String(it.usageGuide || "").trim(),
   }));
 
+const safeNamedCallEq = (name, ...args) => {
+  const fn = globalThis[name];
+  if (typeof fn !== "function") return undefined;
+  try {
+    return fn(...args);
+  } catch {
+    return undefined;
+  }
+};
+
+const getCurrentUserEq =
+  typeof getCurrentUser === "function"
+    ? getCurrentUser
+    : () => {
+        const session = load(storageKeys.session, null);
+        if (!session) return null;
+        const users = load(storageKeys.users, []);
+        return users.find((user) => user.username === session.username) || session || null;
+      };
+
+const getResponsibleStaffEq =
+  typeof getResponsibleStaff === "function"
+    ? getResponsibleStaff
+    : () => load(storageKeys.responsibleStaff, defaultResponsibleStaff);
+
+const isBookingOwnedByUserEq =
+  typeof isBookingOwnedByUser === "function"
+    ? isBookingOwnedByUser
+    : (booking, user) => {
+        if (!user) return false;
+        if (booking?.username && booking.username === user.username) return true;
+        if (booking?.email && booking.email === user.email) return true;
+        const ownerName = booking?.requesterName || booking?.name || "";
+        return Boolean(ownerName && ownerName === user.name);
+      };
+
 const equipmentNameByLang = (item, fallback = "-") => {
   if (!item) return fallback;
   const th = String(item.name || "").trim();
@@ -104,7 +140,7 @@ const buildEquipmentBorrowStats = (items, bookings) => {
 
 const getMyActiveEquipmentBookings = (user) =>
   load(storageKeys.equipmentBookings, [])
-    .filter((b) => isBookingOwnedByUser(b, user))
+    .filter((b) => isBookingOwnedByUserEq(b, user))
     .filter((b) => (b.returnStatus || "borrowed") !== "returned")
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
@@ -146,7 +182,7 @@ const renderEquipmentCatalog = () => {
   const returnAllBtn = byId("eqReturnAllBtn");
   if (!grid || !filter) return;
 
-  const me = getCurrentUser();
+  const me = getCurrentUserEq();
   let mode = filter.value || "all";
   const selectedType = typeFilter?.value || "all";
   const items = normalizeEquipmentItems();
@@ -270,7 +306,7 @@ const renderEqResponsibleOptions = () => {
   const box = byId("eqResponsibleOptions");
   if (!box) return;
   const selected = byId("eqSelectedResponsibleId")?.value || "";
-  const list = getResponsibleStaff();
+  const list = getResponsibleStaffEq();
   box.innerHTML = list.length
     ? list
         .map(
@@ -292,7 +328,7 @@ const setupEqResponsibleSelector = () => {
   if (!box || !hidden) return;
 
   if (!hidden.value) {
-    hidden.value = getResponsibleStaff()[0]?.id || "";
+    hidden.value = getResponsibleStaffEq()[0]?.id || "";
   }
   renderEqResponsibleOptions();
 
@@ -310,7 +346,7 @@ const getMyApprovedRoomSlots = (user) => {
   if (!user) return [];
   return load(storageKeys.roomBookings, [])
     .filter((b) => b.status === "approved")
-    .filter((b) => isBookingOwnedByUser(b, user))
+    .filter((b) => isBookingOwnedByUserEq(b, user))
     .map((b) => ({ date: b.date, timeSlot: b.timeSlot, room: b.room || "Lab-F11" }));
 };
 
@@ -324,7 +360,7 @@ const syncEquipmentEligibility = () => {
   const eqName = byId("eqName");
   if (!eqDate || !eqTime) return;
 
-  const user = getCurrentUser();
+  const user = getCurrentUserEq();
   if (!user) {
     eqDate.disabled = true;
     eqTime.disabled = true;
@@ -430,7 +466,7 @@ const setupEquipmentBookingUI = () => {
     });
   }
 
-  const me = getCurrentUser();
+  const me = getCurrentUserEq();
   if (!me) {
     refreshEquipmentFilterLabels();
     renderEquipmentTypeFilterOptions();
@@ -523,7 +559,7 @@ const setupEquipmentBookingUI = () => {
 
   byId("eqReturnAllBtn")?.addEventListener("click", async () => {
     if (equipmentReturnSubmitting) return;
-    const meUser = getCurrentUser();
+    const meUser = getCurrentUserEq();
     if (!meUser) return;
     const all = getMyActiveEquipmentBookings(meUser).map((b) => b.bookingId);
     if (!all.length) return;
@@ -537,7 +573,7 @@ const setupEquipmentBookingUI = () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const notice = byId("equipmentNotice");
-    const currentUser = getCurrentUser();
+    const currentUser = getCurrentUserEq();
     if (!currentUser) {
       setNotice(notice, t("loginRequiredToBook"), "error");
       return;
@@ -556,7 +592,7 @@ const setupEquipmentBookingUI = () => {
     }
     const matched = load(storageKeys.roomBookings, [])
       .filter((b) => b.status === "approved")
-      .filter((b) => isBookingOwnedByUser(b, currentUser))
+      .filter((b) => isBookingOwnedByUserEq(b, currentUser))
       .some((b) => b.date === date && b.timeSlot === timeSlot);
     if (!matched) {
       setNotice(notice, t("equipmentNeedRoom"), "error");
@@ -595,18 +631,18 @@ const setupEquipmentBookingUI = () => {
     setNotice(notice, t("bookingSaved"));
     form.reset();
     const hidden = byId("eqSelectedResponsibleId");
-    if (hidden) hidden.value = getResponsibleStaff()[0]?.id || "";
+    if (hidden) hidden.value = getResponsibleStaffEq()[0]?.id || "";
     selectedEquipmentItemId = "";
     selectedEquipmentEntries = [];
     renderSelectedEquipmentList();
     syncEquipmentEligibility();
-    renderDashboard();
-    renderRoomApproval();
-    renderRoomSlots();
-    renderResponsibleOptions();
+    safeNamedCallEq("renderDashboard");
+    safeNamedCallEq("renderRoomApproval");
+    safeNamedCallEq("renderRoomSlots");
+    safeNamedCallEq("renderResponsibleOptions");
     renderEqResponsibleOptions();
-    renderProfilePage();
-    renderAdminUserProfilePanel();
+    safeNamedCallEq("renderProfilePage");
+    safeNamedCallEq("renderAdminUserProfilePanel");
   });
 
   setupEqResponsibleSelector();
@@ -614,6 +650,16 @@ const setupEquipmentBookingUI = () => {
   byId("eqTime")?.addEventListener("change", syncEquipmentEligibility);
   syncEquipmentEligibility();
 };
+
+Object.assign(globalThis, {
+  renderEquipmentTypeFilterOptions,
+  refreshEquipmentFilterLabels,
+  renderSelectedEquipmentList,
+  renderEquipmentCatalog,
+  renderEqResponsibleOptions,
+  setupEqResponsibleSelector,
+  setupEquipmentBookingUI,
+});
 
 
 

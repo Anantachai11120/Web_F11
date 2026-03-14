@@ -2,7 +2,7 @@ import Head from "next/head";
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260307-18";
+  const appVersion = "20260314-02";
   return (
     <>
       <Head>
@@ -51,7 +51,11 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
             try { session = raw ? JSON.parse(raw) : null; } catch (e) {}
             var loggedIn = !!(session && session.username);
             root.dataset.auth = loggedIn ? "in" : "out";
-            root.dataset.role = loggedIn ? ((session && session.role === "admin") ? "admin" : "user") : "guest";
+            root.dataset.role = loggedIn
+              ? ((session && session.role === "admin")
+                ? "admin"
+                : ((session && session.role === "teacher") ? "teacher" : "user"))
+              : "guest";
 
             var dict = isEn ? {
               brandName: "UNDERGROUND LAB F11",
@@ -89,6 +93,85 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               } catch (e) {}
             };
 
+            var ensureInitialProfileMiniMenu = function () {
+              try {
+                if (!loggedIn) return false;
+                var nav = document.querySelector(".nav");
+                if (!nav) return false;
+                var shell = nav.querySelector(".nav-profile-shell");
+                if (!shell) {
+                  shell = document.createElement("div");
+                  shell.className = "nav-profile-shell";
+                  shell.innerHTML =
+                    '<button type="button" class="nav-profile-trigger" aria-haspopup="menu" aria-expanded="false">' +
+                      '<img class="nav-profile-avatar" src="' + (session && session.profileImage ? session.profileImage : "image/IconLab.png") + '" alt="' + ((session && (session.name || session.username)) || "profile") + '" />' +
+                    "</button>" +
+                    '<div class="nav-profile-dropdown" role="menu">' +
+                      '<button type="button" class="nav-profile-item" data-profile-menu="profile" role="menuitem">' + (isEn ? "Profile" : "โปรไฟล์") + "</button>" +
+                      '<button type="button" class="nav-profile-item danger" data-profile-menu="logout" role="menuitem">' + (isEn ? "Logout" : "ออกจากระบบ") + "</button>" +
+                    "</div>";
+                  nav.appendChild(shell);
+                } else {
+                  shell.hidden = false;
+                  var avatar = shell.querySelector(".nav-profile-avatar");
+                  if (avatar) {
+                    avatar.src = (session && session.profileImage) ? session.profileImage : "image/IconLab.png";
+                    avatar.alt = (session && (session.name || session.username)) || "profile";
+                  }
+                }
+                return true;
+              } catch (e) {
+                return false;
+              }
+            };
+
+            var syncInitialBookingUi = function () {
+              try {
+                var isRooms = pageName === "rooms";
+                var isEquipment = pageName === "equipment";
+                if (!isRooms && !isEquipment) return;
+
+                if (isRooms) {
+                  var roomCard = document.getElementById("roomBookingCard");
+                  var roomGrid = document.getElementById("roomMainGrid");
+                  var roomLegendMine = document.getElementById("roomLegendMine");
+                  var roomBookingTab = document.querySelector('[data-room-tab="booking"]');
+                  var roomStatusTab = document.querySelector('[data-room-tab="status"]');
+                  if (roomCard) roomCard.hidden = !loggedIn;
+                  if (roomLegendMine) roomLegendMine.hidden = !loggedIn;
+                  if (roomBookingTab) roomBookingTab.hidden = !loggedIn;
+                  if (roomStatusTab) roomStatusTab.hidden = !loggedIn;
+                  if (roomGrid) roomGrid.classList.toggle("single-col", !loggedIn);
+                }
+
+                if (isEquipment) {
+                  var eqCard = document.getElementById("equipmentBookingCard");
+                  var eqGrid = document.getElementById("equipmentMainGrid");
+                  if (eqCard) eqCard.hidden = !loggedIn;
+                  if (eqGrid) eqGrid.classList.toggle("single-col", !loggedIn);
+                }
+              } catch (e) {}
+            };
+
+            var syncInitialAdminUi = function () {
+              try {
+                if (pageName !== "admin") return;
+                var isTeacher = root.dataset.role === "teacher";
+                var roleTab = document.querySelector('[data-admin-tab="adminRole"]');
+                var roleTitle = document.querySelector('[data-admin-panel="adminRole"] h2');
+                var roleHint = document.querySelector('[data-admin-panel="adminRole"] [data-i18n="adminRoleHint"]');
+                if (isTeacher) {
+                  if (roleTab) roleTab.textContent = isEn ? "Permissions" : "จัดการสิทธิ์";
+                  if (roleTitle) roleTitle.textContent = isEn ? "Permissions" : "จัดการสิทธิ์";
+                  if (roleHint) {
+                    roleHint.textContent = isEn
+                      ? "View profiles, suspend users temporarily, and manage quota."
+                      : "ดูโปรไฟล์ผู้ใช้ ระงับผู้ใช้ชั่วคราว และจัดการโควต้า";
+                  }
+                }
+              } catch (e) {}
+            };
+
             var applyQuickI18n = function () {
               var nodes = document.querySelectorAll("[data-i18n]");
               if (!nodes.length) return false;
@@ -109,13 +192,34 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               };
               requestAnimationFrame(tick);
             }
+            var profileAttempts = 0;
+            var profileTick = function () {
+              profileAttempts += 1;
+              if (ensureInitialProfileMiniMenu() || profileAttempts >= 60) return;
+              requestAnimationFrame(profileTick);
+            };
+            requestAnimationFrame(profileTick);
             if (document.readyState === "loading") {
-              document.addEventListener("DOMContentLoaded", syncNavAndLangUi, { once: true });
+              document.addEventListener("DOMContentLoaded", function () {
+                syncNavAndLangUi();
+                ensureInitialProfileMiniMenu();
+                syncInitialBookingUi();
+                syncInitialAdminUi();
+              }, { once: true });
             } else {
               syncNavAndLangUi();
+              ensureInitialProfileMiniMenu();
+              syncInitialBookingUi();
+              syncInitialAdminUi();
             }
             window.setTimeout(syncNavAndLangUi, 0);
             window.setTimeout(syncNavAndLangUi, 120);
+            window.setTimeout(ensureInitialProfileMiniMenu, 0);
+            window.setTimeout(ensureInitialProfileMiniMenu, 120);
+            window.setTimeout(syncInitialBookingUi, 0);
+            window.setTimeout(syncInitialBookingUi, 120);
+            window.setTimeout(syncInitialAdminUi, 0);
+            window.setTimeout(syncInitialAdminUi, 120);
           } catch (e) {}
         })();
       `}</Script>

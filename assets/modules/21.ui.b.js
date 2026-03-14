@@ -96,14 +96,20 @@ const setupResponsibleSelector = () => {
   const box = byId("responsibleOptions");
   const hidden = byId("selectedResponsibleId");
   if (!box || !hidden) return;
+  if (box.dataset.bound === "1") {
+    renderResponsibleOptions();
+    if (typeof renderEqResponsibleOptions === "function") renderEqResponsibleOptions();
+    return;
+  }
 
   if (!hidden.value) {
     const first = getResponsibleStaff()[0];
     hidden.value = first?.id || "";
   }
-renderResponsibleOptions();
-renderEqResponsibleOptions();
+  renderResponsibleOptions();
+  if (typeof renderEqResponsibleOptions === "function") renderEqResponsibleOptions();
 
+  box.dataset.bound = "1";
   box.addEventListener("click", (e) => {
     const target = e.target;
     if (!(target instanceof HTMLElement)) return;
@@ -111,7 +117,14 @@ renderEqResponsibleOptions();
     if (!(card instanceof HTMLElement)) return;
     hidden.value = card.dataset.responsibleId || "";
     renderResponsibleOptions();
-    renderEqResponsibleOptions();
+    if (typeof renderEqResponsibleOptions === "function") renderEqResponsibleOptions();
   });
 };
+
+Object.assign(globalThis, {
+  setupHomeBottomEditor,
+  getResponsibleStaff,
+  renderResponsibleOptions,
+  setupResponsibleSelector,
+});
 

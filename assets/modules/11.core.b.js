@@ -22,12 +22,36 @@ const seedEquipmentTypes = () => {
   save(storageKeys.equipmentTypes, defaultEquipmentTypes);
 };
 
+const getEquipmentItemsBase =
+  typeof getEquipmentItems === "function"
+    ? getEquipmentItems
+    : () => load(storageKeys.equipmentItems, defaultEquipmentItems);
+
+const getResponsibleStaffBase =
+  typeof getResponsibleStaff === "function"
+    ? getResponsibleStaff
+    : () => load(storageKeys.responsibleStaff, defaultResponsibleStaff);
+
+const normalizeEquipmentItemsBase =
+  typeof normalizeEquipmentItems === "function"
+    ? normalizeEquipmentItems
+    : () =>
+        getEquipmentItemsBase().map((it, idx) => ({
+          id: it.id || `eq-${idx + 1}`,
+          name: it.name || `Item ${idx + 1}`,
+          nameEn: String(it.nameEn || "").trim(),
+          image: it.image || "image/IconLab.png",
+          stock: Math.max(1, Number(it.stock || 1)),
+          type: it.type || "ทั่วไป",
+          usageGuide: String(it.usageGuide || "").trim(),
+        }));
+
 const normalizeEquipmentBookingsData = () => {
   const list = load(storageKeys.equipmentBookings, []);
   if (!Array.isArray(list) || !list.length) return;
-  const staff = getResponsibleStaff();
+  const staff = getResponsibleStaffBase();
   const defaultResponsibleId = staff[0]?.id || "";
-  const items = normalizeEquipmentItems();
+  const items = normalizeEquipmentItemsBase();
   let changed = false;
   const normalized = list.map((b) => {
     const next = { ...b };
@@ -189,7 +213,7 @@ const updateVisitorCounters = () => {
 };
 
 const seedAdmin = () => {
-  const users = load(storageKeys.users);
+  const users = load(storageKeys.users, []);
   const adminUsername = "Anantachai2000";
   const hasAdmin = users.some((u) => u.username === adminUsername);
   if (hasAdmin) return;
@@ -208,8 +232,33 @@ const seedAdmin = () => {
   save(storageKeys.users, users);
 };
 
+const seedDemoUser = () => {
+  const users = load(storageKeys.users, []);
+  const demoUsername = "demo_user_f11";
+  const hasDemo = users.some((u) => u.username === demoUsername);
+  if (hasDemo) return;
+
+  users.push({
+    name: "Demo User F11",
+    username: demoUsername,
+    email: "demo.user.f11@labflow.local",
+    password: "Demo_123456",
+    verified: true,
+    verificationCode: "111111",
+    role: "user",
+    studentId: "DEMO001",
+    year: "3",
+    school: "วิศวกรรมศาสตร์",
+    major: "วิศวกรรมเมคคาทรอนิกส์",
+    phone: "0800000000",
+    roomQuotaDaily: 1,
+    roomQuotaWeekly: 3,
+  });
+  save(storageKeys.users, users);
+};
+
 const normalizeUsers = () => {
-  const users = load(storageKeys.users);
+  const users = load(storageKeys.users, []);
   const normalized = users.map((u) => ({
     ...u,
     username: u.username || (u.email ? u.email.split("@")[0] : "user"),

@@ -1,3 +1,17 @@
+const safeNamedCallApi = (name, ...args) => {
+  if (!name || typeof globalThis[name] !== "function") return;
+  try {
+    return globalThis[name](...args);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const getResponsibleStaffApi =
+  typeof getResponsibleStaff === "function"
+    ? getResponsibleStaff
+    : () => load(storageKeys.responsibleStaff, defaultResponsibleStaff);
+
 const sendResponsibleEmailDraft = async (responsible, booking) => {
   if (!responsible?.email) return false;
   const payload = {
@@ -331,7 +345,7 @@ const requestEquipmentReturn = async (bookingId, options = {}) => {
   const item = list[index];
   if ((item.returnStatus || "borrowed") !== "borrowed") return { ok: false, reason: "invalid_status" };
   const responsible =
-    getResponsibleStaff().find((s) => s.id === item.responsibleId) || getResponsibleStaff()[0];
+    getResponsibleStaffApi().find((s) => s.id === item.responsibleId) || getResponsibleStaffApi()[0];
   if (!item.responsibleId && responsible?.id) {
     item.responsibleId = responsible.id;
     save(storageKeys.equipmentBookings, list);
@@ -355,9 +369,9 @@ const requestEquipmentReturn = async (bookingId, options = {}) => {
   item.returnRequestedAt = new Date().toISOString();
   save(storageKeys.equipmentBookings, list);
   if (!silent) alert(`${t("equipmentReturnConfirmSent")} | ${t("equipmentReturnRequested")}`);
-  renderProfilePage();
-  renderEquipmentCatalog();
-  renderAdminEquipmentBorrowSummary();
+  safeNamedCallApi("renderProfilePage");
+  safeNamedCallApi("renderEquipmentCatalog");
+  safeNamedCallApi("renderAdminEquipmentBorrowSummary");
   return { ok: true };
 };
 
@@ -376,7 +390,7 @@ const requestMultipleEquipmentReturns = async (bookingIds, options = {}) => {
     return;
   }
   const responsible =
-    getResponsibleStaff().find((s) => s.id === targetResponsibleId) || getResponsibleStaff()[0];
+    getResponsibleStaffApi().find((s) => s.id === targetResponsibleId) || getResponsibleStaffApi()[0];
   const borrowedOnly = selected.filter((b) => (b.returnStatus || "borrowed") === "borrowed");
   if (!borrowedOnly.length) return;
   const batchId = `eqret-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -405,9 +419,9 @@ const requestMultipleEquipmentReturns = async (bookingIds, options = {}) => {
   });
   save(storageKeys.equipmentBookings, list);
   alert(`${t("equipmentReturnConfirmSent")} | ${t("equipmentReturnRequested")}`);
-  renderProfilePage();
-  renderEquipmentCatalog();
-  renderAdminEquipmentBorrowSummary();
+  safeNamedCallApi("renderProfilePage");
+  safeNamedCallApi("renderEquipmentCatalog");
+  safeNamedCallApi("renderAdminEquipmentBorrowSummary");
 };
 
 const syncEquipmentReturns = async () => {
@@ -429,7 +443,7 @@ const syncEquipmentReturns = async () => {
       }
     });
     if (changed) save(storageKeys.equipmentBookings, list);
-    if (changed) renderAdminEquipmentBorrowSummary();
+    if (changed) safeNamedCallApi("renderAdminEquipmentBorrowSummary");
   } catch {
     // API may be unavailable on static host.
   }
@@ -475,7 +489,7 @@ const registerForm = () => {
       return;
     }
 
-    const users = load(storageKeys.users);
+    const users = load(storageKeys.users, []);
     if (users.some((u) => u.email === email)) {
       setRegisterLoading(false);
       setNotice(notice, t("emailUsed"), "error");
@@ -568,7 +582,7 @@ const verifyForm = () => {
     const code = byId("verifyCode").value.trim().replace(/\D/g, "");
     const notice = byId("verifyNotice");
 
-    const users = load(storageKeys.users);
+    const users = load(storageKeys.users, []);
     const user = users.find((u) => u.email === email);
 
     if (!user) {
@@ -626,9 +640,9 @@ const loginForm = () => {
     setupAdminNav();
     setupAuthNav();
     ensureAdminAccess();
-    updateBookingAuthUI();
+    safeNamedCallApi("updateBookingAuthUI");
     updateNavAuthState();
-    renderAnnouncements();
+    safeNamedCallApi("renderAnnouncements");
   });
 
   form.addEventListener("submit", async (e) => {
@@ -637,7 +651,7 @@ const loginForm = () => {
     const password = byId("loginPassword").value.trim();
     const notice = byId("loginNotice");
 
-    const users = load(storageKeys.users);
+    const users = load(storageKeys.users, []);
     const user = users.find(
       (u) =>
         ((u.email || "").toLowerCase() === loginId.toLowerCase() ||
@@ -679,9 +693,9 @@ const loginForm = () => {
     setupAdminNav();
     setupAuthNav();
     ensureAdminAccess();
-    updateBookingAuthUI();
+    safeNamedCallApi("updateBookingAuthUI");
     updateNavAuthState();
-    renderAnnouncements();
+    safeNamedCallApi("renderAnnouncements");
     if (isCurrentPage("login.html")) {
       location.href = "index.html";
     }
@@ -727,6 +741,18 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
     }
 
     if (key === storageKeys.roomBookings) {
+      if (!String(data.roomZone || "").trim()) {
+        setNotice(
+          notice,
+          typeof roomZoneUi === "function"
+            ? roomZoneUi("roomZoneRequired")
+            : getLang() === "th"
+              ? "\u0e01\u0e23\u0e38\u0e13\u0e32\u0e40\u0e25\u0e37\u0e2d\u0e01\u0e42\u0e0b\u0e19\u0e1e\u0e37\u0e49\u0e19\u0e17\u0e35\u0e48"
+              : "Please select an area zone.",
+          "error"
+        );
+        return;
+      }
       const closure = findRoomClosure({
         room: String(data.room || "Lab-F11"),
         date: String(data.date || ""),
@@ -741,7 +767,7 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
           }),
           "error"
         );
-        renderRoomSlots();
+        safeNamedCallApi("renderRoomSlots");
         return;
       }
       if (!String(data.responsibleId || "").trim()) {
@@ -776,7 +802,19 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
       const nextCount = Number(data.participantCount || 1);
       if (slotCount + nextCount > 20) {
         setNotice(notice, t("roomFull"), "error");
-        renderRoomSlots();
+        safeNamedCallApi("renderRoomSlots");
+        return;
+      }
+      if (typeof roomZoneIsBlocked === "function" && roomZoneIsBlocked(selected, data.roomZone)) {
+        const zoneLabel = getRoomZoneById(String(data.roomZone || "").trim())?.label || String(data.roomZone || "").trim();
+        setNotice(
+          notice,
+          getLang() === "th"
+            ? `\u0e42\u0e0b\u0e19 ${zoneLabel} \u0e16\u0e39\u0e01\u0e08\u0e2d\u0e07\u0e41\u0e25\u0e49\u0e27\u0e43\u0e19\u0e0a\u0e48\u0e27\u0e07\u0e40\u0e27\u0e25\u0e32\u0e19\u0e35\u0e49`
+            : `Zone ${zoneLabel} is already booked for this timeslot.`,
+          "error"
+        );
+        safeNamedCallApi("renderRoomZoneMaps");
         return;
       }
     }
@@ -840,7 +878,7 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
 
     setNotice(notice, t("bookingSaved"));
     if (key === storageKeys.roomBookings) {
-      const responsible = getResponsibleStaff().find((s) => s.id === base.responsibleId);
+      const responsible = getResponsibleStaffApi().find((s) => s.id === base.responsibleId);
       const mailResult = await sendResponsibleEmailDraft(responsible, base);
       setNotice(
         notice,
@@ -852,21 +890,30 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
     form.reset();
     if (key === storageKeys.roomBookings) {
       const hidden = byId("selectedResponsibleId");
-      if (hidden) hidden.value = getResponsibleStaff()[0]?.id || "";
+      if (hidden) hidden.value = getResponsibleStaffApi()[0]?.id || "";
+      const zoneInput = byId("selectedRoomZone");
+      if (zoneInput) zoneInput.value = "";
     }
     if (key === storageKeys.equipmentBookings) {
       const hidden = byId("eqSelectedResponsibleId");
-      if (hidden) hidden.value = getResponsibleStaff()[0]?.id || "";
+      if (hidden) hidden.value = getResponsibleStaffApi()[0]?.id || "";
       selectedEquipmentItemId = "";
       syncEquipmentEligibility();
     }
-    renderDashboard();
-    renderRoomApproval();
-    renderRoomSlots();
-    renderResponsibleOptions();
-    renderEqResponsibleOptions();
-    renderProfilePage();
-    renderAdminUserProfilePanel();
+    safeNamedCallApi("renderDashboard");
+    safeNamedCallApi("renderRoomApproval");
+    safeNamedCallApi("renderRoomSlots");
+    safeNamedCallApi("renderResponsibleOptions");
+    safeNamedCallApi("renderEqResponsibleOptions");
+    safeNamedCallApi("renderProfilePage");
+    safeNamedCallApi("renderAdminUserProfilePanel");
   });
 };
+
+Object.assign(globalThis, {
+  registerForm,
+  verifyForm,
+  refreshSessionLabel,
+  loginForm,
+});
 

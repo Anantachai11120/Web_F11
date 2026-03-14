@@ -81,6 +81,10 @@ const setupAdminRoomClosureForm = () => {
   const reasonInput = byId("adminRoomCloseReason");
   const notice = byId("adminRoomCloseNotice");
   if (!form || !mode || !timeWrap) return;
+  const canManageClosure = hasAdminCapability("room_closure_manage");
+  if (!canManageClosure) {
+    form.hidden = true;
+  }
 
   const syncMode = () => {
     const isSlot = mode.value === "slot";
@@ -105,7 +109,7 @@ const setupAdminRoomClosureForm = () => {
     form.dataset.bound = "1";
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (!requireAdminAction()) return;
+      if (!requireCapability("room_closure_manage")) return;
       const date = String(byId("adminRoomCloseDate")?.value || "").trim();
       const room = "Lab-F11";
       const closeMode = String(byId("adminRoomCloseMode")?.value || "day");
@@ -351,16 +355,20 @@ const renderAdminEquipmentBorrowSummary = () => {
 const renderAdminUsers = () => {
   const target = byId("adminUserList");
   if (!target) return;
-  const users = load(storageKeys.users);
+  const users = load(storageKeys.users, []);
+  const canVerify = hasAdminCapability("user_verify_manage");
+  const canSuspend = hasAdminCapability("user_suspend_manage");
+  const canView = hasAdminCapability("user_view");
 
-  target.innerHTML = users
+  target.innerHTML = users.length
+    ? users
     .map((u, index) => {
       const isVerified = Boolean(u.verified);
       const isSuspended = Boolean(u.suspended);
       const verifyText = !isVerified
         ? t("verifyMemberBtn")
         : isSuspended
-          ? (getLang() === "th" ? "ถูกระงับ" : "Suspended")
+          ? (getLang() === "th" ? "ระงับชั่วคราว" : "Suspended")
           : t("verifiedMemberBtn");
       const verifyClass = !isVerified ? "btn-small" : isSuspended ? "btn-small danger" : "btn-small success";
       const verifyLabel = !isVerified
@@ -368,6 +376,7 @@ const renderAdminUsers = () => {
         : isSuspended
           ? (getLang() === "th" ? "ระงับ" : "suspended")
           : t("verifiedYes");
+      const showVerifyButton = (!isVerified && canVerify) || (isVerified && canSuspend);
       return `<div class="admin-item">
         <div>
           <p><strong>${u.name}</strong> (${u.username})</p>
@@ -375,14 +384,14 @@ const renderAdminUsers = () => {
           <p class="muted">${u.studentId ? t("adminUserMeta", { studentId: u.studentId, year: u.year || "-", school: u.school || "-", major: u.major || "-", phone: u.phone || "-" }) : ""}</p>
         </div>
         <div>
-          <button type="button" class="${verifyClass}" data-verify-user="${index}">${verifyText}</button>
-          <button type="button" class="btn-small" data-view-user-profile="${index}">${t("viewProfileBtn")}</button>
+          ${showVerifyButton ? `<button type="button" class="${verifyClass}" data-verify-user="${index}">${verifyText}</button>` : ""}
+          ${canView ? `<button type="button" class="btn-small" data-view-user-profile="${index}">${t("viewProfileBtn")}</button>` : ""}
         </div>
       </div>`;
     })
-    .join("");
+    .join("")
+    : `<p class="muted">${t("recentEmpty")}</p>`;
 };
-
 let selectedAdminUserProfileKey = "";
 let selectedAdminQuotaUserIndex = -1;
 
@@ -428,7 +437,7 @@ const setupAdminQuotaModal = () => {
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    if (!requireAdminAction()) return;
+    if (!requireCapability("user_quota_manage")) return;
     const users = load(storageKeys.users, []);
     const index = selectedAdminQuotaUserIndex;
     if (index < 0 || !users[index]) return;
@@ -486,6 +495,19 @@ const renderAdminUserProfilePanel = () => {
   );
   const quota = getRoomQuota(user);
   const isAdminUser = user.role === "admin";
+  const isTeacherUser = user.role === "teacher";
+  const canQuota = hasAdminCapability("user_quota_manage");
+  const canSuspend = hasAdminCapability("user_suspend_manage");
+  const canPromoteTeacher = hasAdminCapability("role_promote_teacher");
+  const canPromoteAdmin = hasAdminCapability("role_promote_admin");
+  const canDeleteUser = hasAdminCapability("user_delete_manage");
+  const canVerify = hasAdminCapability("user_verify_manage");
+  const canManageAnyRole = isPrimaryAdminSession();
+  const verifyText = !user.verified
+    ? t("verifyMemberBtn")
+    : user.suspended
+      ? (getLang() === "th" ? "ระงับชั่วคราว" : "Suspended")
+      : t("verifiedMemberBtn");
 
   panel.hidden = false;
   view.innerHTML = `
@@ -500,9 +522,19 @@ const renderAdminUserProfilePanel = () => {
         </div>
       </div>
       <div class="inline-actions">
-        <button type="button" class="btn-small" data-add-quota-user="${userIndex}">${t("adminAddQuotaBtn")}</button>
-        <button type="button" class="btn-small" data-promote-user="${userIndex}" ${isAdminUser ? "disabled" : ""}>${t("navAdmin")}</button>
-        <button type="button" class="btn-small danger" data-delete-user="${userIndex}">${t("deleteUserBtn")}</button>
+        ${canQuota ? `<button type="button" class="btn-small" data-add-quota-user="${userIndex}">${t("adminAddQuotaBtn")}</button>` : ""}
+        ${
+          canManageAnyRole
+            ? `
+              <button type="button" class="btn-small" data-set-user-role="${userIndex}" data-role-value="user" ${user.username === "Anantachai2000" || user.role === "user" ? "disabled" : ""}>${getLang() === "th" ? "ผู้ใช้" : "User"}</button>
+              <button type="button" class="btn-small" data-set-user-role="${userIndex}" data-role-value="teacher" ${user.username === "Anantachai2000" || user.role === "teacher" ? "disabled" : ""}>${getLang() === "th" ? "อาจารย์" : "Teacher"}</button>
+              <button type="button" class="btn-small" data-set-user-role="${userIndex}" data-role-value="admin" ${user.username === "Anantachai2000" || user.role === "admin" ? "disabled" : ""}>${t("navAdmin")}</button>
+            `
+            : `${canPromoteTeacher ? `<button type="button" class="btn-small" data-promote-teacher="${userIndex}" ${isTeacherUser || isAdminUser ? "disabled" : ""}>${getLang() === "th" ? "อาจารย์" : "Teacher"}</button>` : ""}
+               ${canPromoteAdmin ? `<button type="button" class="btn-small" data-promote-user="${userIndex}" ${isAdminUser ? "disabled" : ""}>${t("navAdmin")}</button>` : ""}`
+        }
+        ${canDeleteUser ? `<button type="button" class="btn-small danger" data-delete-user="${userIndex}">${t("deleteUserBtn")}</button>` : ""}
+      </div>
       </div>
       <h4>${t("adminProfileRoomHistory")} (${roomList.length})</h4>
       <div class="admin-user-profile-list">
@@ -542,7 +574,6 @@ const renderAdminUserProfilePanel = () => {
     </div>
   `;
 };
-
 const renderAdminAnnouncements = () => {
   const target = byId("adminAnnouncementList");
   if (!target) return;
@@ -571,15 +602,38 @@ const setupAdminSectionTabs = () => {
   const tabButtons = Array.from(document.querySelectorAll("[data-admin-tab]"));
   const panels = Array.from(document.querySelectorAll("[data-admin-panel]"));
   if (!tabButtons.length || !panels.length) return;
+  const isTeacher = isTeacherSession() && !isAdminSession();
+  const adminRoleButton = tabButtons.find((btn) => btn.dataset.adminTab === "adminRole");
+  const adminRolePanelTitle = document.querySelector('[data-admin-panel="adminRole"] h2');
+  if (adminRoleButton) {
+    adminRoleButton.textContent = isTeacher
+      ? (getLang() === "th" ? "จัดการสิทธิ์" : "Permissions")
+      : t("adminTabAdminRole");
+  }
+  if (adminRolePanelTitle instanceof HTMLElement) {
+    adminRolePanelTitle.textContent = isTeacher
+      ? (getLang() === "th" ? "จัดการสิทธิ์" : "Permissions")
+      : t("adminTabAdminRole");
+  }
+
+  const allowedButtons = tabButtons.filter((btn) => canAccessAdminTab(btn.dataset.adminTab || ""));
+  const allowedPanels = panels.filter((panel) => canAccessAdminTab(panel.dataset.adminPanel || ""));
+  tabButtons.forEach((btn) => {
+    btn.hidden = !canAccessAdminTab(btn.dataset.adminTab || "");
+  });
+  panels.forEach((panel) => {
+    panel.hidden = !canAccessAdminTab(panel.dataset.adminPanel || "");
+  });
+  if (!allowedButtons.length || !allowedPanels.length) return;
 
   const applyTab = (tabKey) => {
     const next = String(tabKey || "").trim();
-    const fallback = tabButtons[0]?.dataset.adminTab || "";
-    const selected = tabButtons.some((btn) => btn.dataset.adminTab === next) ? next : fallback;
-    tabButtons.forEach((btn) => {
+    const fallback = allowedButtons[0]?.dataset.adminTab || "";
+    const selected = allowedButtons.some((btn) => btn.dataset.adminTab === next) ? next : fallback;
+    allowedButtons.forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.adminTab === selected);
     });
-    panels.forEach((panel) => {
+    allowedPanels.forEach((panel) => {
       panel.hidden = panel.dataset.adminPanel !== selected;
     });
   };
@@ -587,7 +641,7 @@ const setupAdminSectionTabs = () => {
   const hashTab = String(location.hash || "").replace("#admin-", "").trim();
   applyTab(hashTab);
 
-  tabButtons.forEach((btn) => {
+  allowedButtons.forEach((btn) => {
     if (btn.dataset.bound === "1") return;
     btn.dataset.bound = "1";
     btn.addEventListener("click", () => {
@@ -600,3 +654,17 @@ const setupAdminSectionTabs = () => {
     });
   });
 };
+
+Object.assign(globalThis, {
+  renderAdminRoomClosures,
+  setupAdminRoomClosureForm,
+  renderRoomApproval,
+  renderBroadcastRecipientList,
+  renderAdminEquipmentBorrowSummary,
+  renderAdminUsers,
+  setupAdminQuotaModal,
+  renderAdminUserProfilePanel,
+  renderAdminAnnouncements,
+  setupAdminSectionTabs,
+});
+
