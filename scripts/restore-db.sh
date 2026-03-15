@@ -4,11 +4,14 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [[ $# -lt 1 ]]; then
+  echo "Usage: bash ./scripts/restore-db.sh <backup.sql|backup.sql.gz>" >&2
+  exit 1
+fi
+
 ENV_FILE="${ENV_FILE:-.env}"
-BACKUP_DIR="${BACKUP_DIR:-backups}"
 SERVICE_NAME="${SERVICE_NAME:-mysql}"
-OUTPUT_GZIP="${OUTPUT_GZIP:-true}"
-KEEP_DAYS="${KEEP_DAYS:-30}"
+INPUT_FILE="$1"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is not installed." >&2
@@ -45,15 +48,15 @@ if [[ -f "$ENV_FILE" ]]; then
   db_name="$(read_env_value DB_NAME "$ENV_FILE" || printf '%s' "$db_name")"
 fi
 
-mkdir -p "$BACKUP_DIR"
-stamp="$(date +%Y%m%d_%H%M%S)"
-out="$BACKUP_DIR/mysql_${db_name}_${stamp}.sql"
-
-echo "Creating backup: $out"
-"${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysqldump -u${db_user} -p${db_pass} --single-transaction --quick ${db_name}" > "$out"
-if [[ "$OUTPUT_GZIP" == "true" ]]; then
-  gzip -f "$out"
-  out="${out}.gz"
+if [[ ! -f "$INPUT_FILE" ]]; then
+  echo "Backup file not found: $INPUT_FILE" >&2
+  exit 1
 fi
-find "$BACKUP_DIR" -type f -name "mysql_${db_name}_*.sql*" -mtime +"$KEEP_DAYS" -delete
-echo "Backup complete: $out"
+
+echo "Restoring database ${db_name} from $INPUT_FILE"
+if [[ "$INPUT_FILE" == *.gz ]]; then
+  gunzip -c "$INPUT_FILE" | "${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysql -u${db_user} -p${db_pass} ${db_name}"
+else
+  cat "$INPUT_FILE" | "${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysql -u${db_user} -p${db_pass} ${db_name}"
+fi
+echo "Restore complete."

@@ -55,6 +55,7 @@ services:
       - DB_USER=${DB_USER:-weblab}
       - DB_PASS=${DB_PASS:-weblab_pass}
       - DB_NAME=${DB_NAME:-weblab_f11}
+      - REQUIRE_DB=${REQUIRE_DB:-true}
     volumes:
       - ./data:/app/data
     depends_on:

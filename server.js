@@ -31,6 +31,9 @@ const sharedStateKeys = new Set([
   'lab_notifications',
 ]);
 const dbEnabled = Boolean(process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME);
+const requireDb = process.env.REQUIRE_DB
+  ? String(process.env.REQUIRE_DB).toLowerCase() === 'true'
+  : process.env.NODE_ENV === 'production';
 let dbPool = null;
 const DB_KEYS = {
   approvals: 'booking_approvals',
@@ -1183,10 +1186,16 @@ const startServer = async () => {
       await migrateFileDataToDbIfNeeded();
       console.log('MySQL connected.');
     } catch (err) {
-      console.error('MySQL init failed, fallback to file storage:', err.message || err);
       dbPool = null;
+      if (requireDb) {
+        throw new Error(`MySQL init failed and REQUIRE_DB=true: ${err.message || err}`);
+      }
+      console.error('MySQL init failed, fallback to file storage:', err.message || err);
     }
   } else {
+    if (requireDb) {
+      throw new Error('MySQL is required in this environment, but DB_HOST/DB_USER/DB_NAME are not set.');
+    }
     console.log('MySQL disabled (DB_HOST/DB_USER/DB_NAME not set), using file storage.');
   }
 
