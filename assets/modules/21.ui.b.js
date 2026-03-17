@@ -99,8 +99,8 @@ const renderHomeAboutSection = () => {
   const filter = byId("labAboutPositionFilter");
   const listWrap = byId("labAboutMembers");
   if (!section || !filter || !listWrap) return;
-  const summaryPrimary = section.querySelector("summary span");
-  const summarySecondary = section.querySelector("summary strong");
+  const summaryPrimary = section.querySelector(".lab-about-head span, summary span");
+  const summarySecondary = section.querySelector(".lab-about-head strong, summary strong");
   const filterLabel = section.querySelector("label[for='labAboutPositionFilter']");
   if (summaryPrimary) summaryPrimary.textContent = staffUi("aboutTitle");
   if (summarySecondary) summarySecondary.textContent = staffUi("aboutSummary");
@@ -110,7 +110,6 @@ const renderHomeAboutSection = () => {
   const positions = getStaffPositions();
   const currentValue = String(filter.value || "all").trim() || "all";
 
-  section.hidden = !staff.length;
   if (!staff.length) {
     listWrap.innerHTML = `<p class="muted">${staffUi("aboutEmpty")}</p>`;
     return;

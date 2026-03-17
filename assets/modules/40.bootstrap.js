@@ -460,6 +460,11 @@ const bootstrapApp = async () => {
     safeCall(setupHomeBottomEditor);
   }
 
+  if (isCurrentPage("about.html")) {
+    safeNamedCall("rerenderDynamicUi");
+    safeNamedCall("setupHomeAboutSection");
+  }
+
   if (isCurrentPage("profile.html")) {
     safeNamedCall("rerenderDynamicUi");
   }
@@ -529,7 +534,7 @@ const bootstrapApp = async () => {
     safeCall(adminActions);
   }
 
-  if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html", "index.html")) {
+  if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html", "index.html", "about.html")) {
     syncApprovalsAndReturns().then(() => {
       safeNamedCall("renderDashboard");
       safeNamedCall("renderRoomApproval");

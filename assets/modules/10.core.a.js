@@ -19,6 +19,8 @@ const pageAliasMap = {
   "verify.html": "verify.html",
   profile: "profile.html",
   "profile.html": "profile.html",
+  about: "about.html",
+  "about.html": "about.html",
   admin: "admin.html",
   "admin.html": "admin.html",
 };

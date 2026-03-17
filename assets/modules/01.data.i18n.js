@@ -934,3 +934,23 @@ Object.assign(i18n.en, {
   adminRoomCloseReasonTeaching: "Teaching",
 });
 
+
+Object.assign(i18n.th, {
+  labProjectsEmpty: "????????????????",
+  adminLabProjectEmpty: "????????????????",
+});
+
+Object.assign(i18n.en, {
+  labProjectsEmpty: "No lab projects yet.",
+  adminLabProjectEmpty: "No lab projects yet.",
+});
+
+Object.assign(i18n.zh, {
+  labProjectsEmpty: "????????",
+  adminLabProjectEmpty: "????????",
+});
+
+Object.assign(i18n.es, {
+  labProjectsEmpty: "Aun no hay proyectos del laboratorio.",
+  adminLabProjectEmpty: "Aun no hay proyectos del laboratorio.",
+});

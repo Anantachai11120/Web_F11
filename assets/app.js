@@ -1,6 +1,8 @@
-﻿(() => {
-  const version = "20260317-04";
+(() => {
+  const version = "20260317-05";
   const page = String(document.documentElement?.dataset?.page || "").trim() || "index";
+  if (window.__labAssetsBootstrapped) return;
+  window.__labAssetsBootstrapped = true;
 
   const commonParts = [
     "/assets/modules/00.data.config.js",
@@ -15,6 +17,10 @@
       "/assets/modules/20.ui.a.js",
       "/assets/modules/21.ui.b.js",
       "/assets/modules/22.ui.lab-projects.js",
+      "/assets/modules/40.bootstrap.js",
+    ],
+    about: [
+      "/assets/modules/21.ui.b.js",
       "/assets/modules/40.bootstrap.js",
     ],
     rooms: [
@@ -68,14 +74,24 @@
 
   const parts = [...commonParts, ...(pageParts[page] || pageParts.index)];
 
-  parts.forEach((part) => {
-    const script = document.createElement("script");
-    script.src = `${part}?v=${version}`;
-    script.async = false;
-    script.onerror = () => {
-      console.error(`Failed to load ${part}`);
-    };
-    document.head.appendChild(script);
-  });
-})();
+  const loadScriptSequentially = (part) =>
+    new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `${part}?v=${version}`;
+      script.async = false;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load ${part}`));
+      document.head.appendChild(script);
+    });
 
+  (async () => {
+    for (const part of parts) {
+      try {
+        await loadScriptSequentially(part);
+      } catch (error) {
+        console.error(error);
+        break;
+      }
+    }
+  })();
+})();

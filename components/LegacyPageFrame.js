@@ -2,7 +2,7 @@
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260317-04";
+  const appVersion = "20260317-05";
   const sanitizedBodyHtml = String(bodyHtml || "")
     .replace(/<link[^>]+href=["']assets\/style\.css[^>]*>\s*/gi, "")
     .replace(/<script[^>]+src=["']assets\/app\.js[^>]*><\/script>\s*/gi, "");
@@ -41,6 +41,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
             var path = (location.pathname || "").toLowerCase();
             var pageName = "";
             if (path === "/equipment" || path.endsWith("/equipment.html")) pageName = "equipment";
+            else if (path === "/about" || path.endsWith("/about.html")) pageName = "about";
             else if (path === "/rooms" || path.endsWith("/rooms.html")) pageName = "rooms";
             else if (path === "/profile" || path.endsWith("/profile.html")) pageName = "profile";
             else if (path === "/admin" || path.endsWith("/admin.html")) pageName = "admin";

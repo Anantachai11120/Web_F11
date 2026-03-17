@@ -1,12 +1,9 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LabFlow | ยืนยันบัญชี</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <title>LabFlow F11 | About Us</title>
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
@@ -31,42 +28,22 @@
 
   <main>
     <div class="container">
-      <section class="hero">
-        <h1>ยืนยันบัญชีสมาชิก</h1>
-        <p>กรอกอีเมลและรหัสยืนยัน 6 หลักที่ส่งไปยังอีเมลที่สมัครไว้</p>
-      </section>
-
-      <section class="grid grid-2 verify-layout">
-        <article class="card verify-card-main">
-          <h2>ฟอร์มยืนยัน OTP</h2>
-          <form id="verifyForm">
-            <label for="verifyEmail">อีเมล</label>
-            <input id="verifyEmail" type="email" placeholder="name@univ.ac.th" />
-
-            <label for="verifyCode">รหัสยืนยัน</label>
-            <input id="verifyCode" class="otp-input" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="รหัส OTP" />
-
-            <button type="submit">ยืนยันบัญชี</button>
-            <div id="verifyNotice" class="notice" hidden></div>
-          </form>
-        </article>
-        <article class="card verify-card-side">
-          <h3>วิธีใช้งาน</h3>
-          <ol>
-            <li>ตรวจสอบอีเมลที่ใช้สมัครสมาชิก</li>
-            <li>นำรหัส OTP 6 หลักมากรอก</li>
-            <li>กดยืนยัน แล้วเข้าสู่ระบบได้ทันที</li>
-          </ol>
-          <p class="muted">หากไม่พบอีเมล ให้ตรวจสอบในโฟลเดอร์ Spam/Junk</p>
-        </article>
+      <section id="labAboutSection" class="lab-about" style="margin-top: 1rem;">
+        <div class="lab-about-head">
+          <span>เกี่ยวกับเรา</span>
+          <strong>สมาชิกแลป</strong>
+        </div>
+        <div class="lab-about-controls">
+          <label for="labAboutPositionFilter">หมวดหมู่ตำแหน่ง</label>
+          <select id="labAboutPositionFilter"></select>
+        </div>
+        <div id="labAboutMembers"></div>
       </section>
     </div>
   </main>
 
   <footer class="container footer">LabFlow <span id="year"></span></footer>
+
   <script src="assets/app.js"></script>
 </body>
 </html>
-
-
-

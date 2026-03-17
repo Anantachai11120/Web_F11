@@ -166,24 +166,30 @@
   box-shadow: 0 12px 24px rgba(116, 144, 162, 0.08);
 }
 
+.lab-about-head,
 .lab-about summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  cursor: pointer;
   list-style: none;
   gap: 0.8rem;
+}
+
+.lab-about summary {
+  cursor: pointer;
 }
 
 .lab-about summary::-webkit-details-marker {
   display: none;
 }
 
+.lab-about-head span,
 .lab-about summary span {
   color: #58768a;
   font-weight: 700;
 }
 
+.lab-about-head strong,
 .lab-about summary strong {
   color: #284253;
   font-size: 1.02rem;
@@ -816,6 +822,7 @@
   .announcement-editor-actions {
     flex-direction: column-reverse;
   }
+
 }
 
 .lab-projects-card {
