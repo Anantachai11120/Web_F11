@@ -2,7 +2,7 @@
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260317-10";
+  const appVersion = "20260317-11";
   const sanitizedBodyHtml = String(bodyHtml || "")
     .replace(/<link[^>]+href=["']assets\/style\.css[^>]*>\s*/gi, "")
     .replace(/<script[^>]+src=["']assets\/app\.js[^>]*><\/script>\s*/gi, "");
@@ -156,11 +156,16 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
 
                 if (isRooms) {
                   var roomCard = document.getElementById("roomBookingCard");
+                  var roomStatusCard = document.querySelector('[data-room-panel="status"]');
                   var roomGrid = document.getElementById("roomMainGrid");
+                  var roomNav = document.querySelector(".room-section-nav");
                   var roomLegendMine = document.getElementById("roomLegendMine");
                   var roomBookingTab = document.querySelector('[data-room-tab="booking"]');
                   var roomStatusTab = document.querySelector('[data-room-tab="status"]');
                   if (roomCard) roomCard.hidden = !loggedIn;
+                  if (roomCard && loggedIn) roomCard.hidden = true;
+                  if (roomStatusCard) roomStatusCard.hidden = false;
+                  if (roomNav) roomNav.hidden = !loggedIn;
                   if (roomLegendMine) roomLegendMine.hidden = !loggedIn;
                   if (roomBookingTab) roomBookingTab.hidden = !loggedIn;
                   if (roomStatusTab) roomStatusTab.hidden = !loggedIn;
