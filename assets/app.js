@@ -1,5 +1,5 @@
 (() => {
-  const version = "20260317-06";
+  const version = "20260317-07";
   const page = String(document.documentElement?.dataset?.page || "").trim() || "index";
   if (window.__labAssetsBootstrapped) return;
   window.__labAssetsBootstrapped = true;
@@ -73,25 +73,16 @@
   };
 
   const parts = [...commonParts, ...(pageParts[page] || pageParts.index)];
-
-  const loadScriptSequentially = (part) =>
-    new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = `${part}?v=${version}`;
-      script.async = false;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Failed to load ${part}`));
-      document.head.appendChild(script);
-    });
-
-  (async () => {
-    for (const part of parts) {
-      try {
-        await loadScriptSequentially(part);
-      } catch (error) {
-        console.error(error);
-        break;
-      }
-    }
-  })();
+  parts.forEach((part) => {
+    const src = `${part}?v=${version}`;
+    if (document.querySelector(`script[data-lab-src="${src}"]`)) return;
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = false;
+    script.dataset.labSrc = src;
+    script.onerror = () => {
+      console.error(`Failed to load ${part}`);
+    };
+    document.head.appendChild(script);
+  });
 })();

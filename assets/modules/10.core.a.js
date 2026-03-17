@@ -220,7 +220,7 @@ const initSharedStorage = async () => {
     let res = null;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 5000);
+      const timer = setTimeout(() => controller.abort(), 2500);
       try {
         res = await fetch("/api/shared-state", {
           cache: "no-store",

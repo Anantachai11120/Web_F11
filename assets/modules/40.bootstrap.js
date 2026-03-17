@@ -549,7 +549,7 @@ const bootstrapApp = async () => {
         safeNamedCall("renderRoomSlots");
         safeNamedCall("renderProfilePage");
       });
-    }, 15000);
+    }, 30000);
   }
 
   const sharedChanged = await sharedChangedPromise;
@@ -565,11 +565,11 @@ const bootstrapApp = async () => {
     safeNamedCall("renderSelectedEquipmentList");
   }
 
-  // Run one more pass after the page settles to avoid first-load race conditions
-  // where the initial page appears before all module-owned sections finish binding.
-  requestAnimationFrame(() => safeNamedCall("rerenderDynamicUi"));
-  window.setTimeout(() => safeNamedCall("rerenderDynamicUi"), 120);
-  window.addEventListener("load", () => safeNamedCall("rerenderDynamicUi"), { once: true });
+  const needsSettlePass = isAnyCurrentPage("index.html", "about.html", "admin.html");
+  if (needsSettlePass) {
+    requestAnimationFrame(() => safeNamedCall("rerenderDynamicUi"));
+    window.setTimeout(() => safeNamedCall("rerenderDynamicUi"), 80);
+  }
 };
 
 bootstrapApp();
