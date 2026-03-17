@@ -2,7 +2,7 @@
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260317-07";
+  const appVersion = "20260317-09";
   const sanitizedBodyHtml = String(bodyHtml || "")
     .replace(/<link[^>]+href=["']assets\/style\.css[^>]*>\s*/gi, "")
     .replace(/<script[^>]+src=["']assets\/app\.js[^>]*><\/script>\s*/gi, "");

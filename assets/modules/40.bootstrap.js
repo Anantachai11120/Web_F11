@@ -425,6 +425,20 @@ const syncApprovalsAndReturns = () =>
     typeof syncEquipmentReturns === "function" ? syncEquipmentReturns() : Promise.resolve(),
   ]);
 
+const deferSharedStorageInit = () =>
+  new Promise((resolve) => {
+    const kick = () => {
+      initSharedStorage()
+        .then(resolve)
+        .catch(() => resolve(false));
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(kick, { timeout: 1200 });
+      return;
+    }
+    window.setTimeout(kick, 0);
+  });
+
 const bootstrapApp = async () => {
   setupClientHardening();
   applyTranslations();
@@ -438,8 +452,6 @@ const bootstrapApp = async () => {
   setupAuthNav();
   setupAdminNav();
   document.documentElement.classList.add("i18n-ready");
-
-  const sharedChangedPromise = initSharedStorage();
 
   seedAdmin();
   seedDemoUser();
@@ -534,7 +546,9 @@ const bootstrapApp = async () => {
     safeCall(adminActions);
   }
 
-  if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html", "index.html", "about.html")) {
+  const sharedChangedPromise = deferSharedStorageInit();
+
+  if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html")) {
     syncApprovalsAndReturns().then(() => {
       safeNamedCall("renderDashboard");
       safeNamedCall("renderRoomApproval");
