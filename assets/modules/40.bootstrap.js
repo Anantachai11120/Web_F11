@@ -533,15 +533,15 @@ const bootstrapApp = async () => {
   if (isCurrentPage("equipment.html")) {
     safeCall(updateBookingAuthUI);
     safeNamedCall("setupEquipmentBookingUI");
+    safeCall(setupEquipmentCropTool);
+    safeCall(setupEquipmentAdminTools);
     safeNamedCall("rerenderDynamicUi");
   }
 
   if (isCurrentPage("admin.html")) {
     safeCall(setupCropTool);
-    safeCall(setupEquipmentCropTool);
     safeCall(refreshCropStatusByState);
     safeCall(setupResponsibleAdmin);
-    safeCall(setupEquipmentAdminTools);
     safeCall(setupHomeBottomEditor);
     safeCall(setupAnnouncementEditor);
     safeNamedCall("setupLabProjectsAdmin");
