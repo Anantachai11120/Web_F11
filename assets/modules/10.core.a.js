@@ -681,41 +681,49 @@ const applyTranslations = () => {
 const setupLanguageSelector = () => {
   const selects = document.querySelectorAll("#languageSelect");
   if (!selects.length) return;
-  const safeNamedCall = (name, ...args) => {
-    if (!name || typeof globalThis[name] !== "function") return;
-    try {
-      return globalThis[name](...args);
-    } catch (error) {
-      console.error(error);
-    }
-  };
   selects.forEach((sel) => {
     sel.value = getLang();
     sel.addEventListener("change", (e) => {
       const nextLang = e.target.value === "en" ? "en" : "th";
       localStorage.setItem(storageKeys.lang, nextLang);
       applyTranslations();
-      safeNamedCall("renderDashboard");
-      safeNamedCall("renderAnnouncements");
-      safeNamedCall("renderRoomApproval");
-      safeNamedCall("renderAdminUsers");
-      safeNamedCall("renderAdminUserProfilePanel");
-      safeNamedCall("renderAdminEquipmentBorrowSummary");
-      safeNamedCall("renderBroadcastRecipientList");
-      safeNamedCall("renderAdminAnnouncements");
-      safeNamedCall("renderAdminLabProjects");
-      safeNamedCall("renderLabProjects");
-      safeNamedCall("renderEquipmentTypeFilterOptions");
-      safeNamedCall("refreshEquipmentFilterLabels");
-      safeNamedCall("refreshSessionLabel");
+      rerenderDynamicUi();
       ensureAdminAccess();
       safeNamedCall("refreshCropStatusByState");
       safeNamedCall("updateBookingAuthUI");
       updateNavAuthState();
       setupAuthNav();
-      safeNamedCall("renderRoomZoneMaps");
     });
   });
+};
+
+const rerenderDynamicUi = () => {
+  safeNamedCall("renderDashboard");
+  safeNamedCall("renderAnnouncements");
+  safeNamedCall("renderRoomApproval");
+  safeNamedCall("renderAdminUsers");
+  safeNamedCall("renderAdminUserProfilePanel");
+  safeNamedCall("renderAdminEquipmentBorrowSummary");
+  safeNamedCall("renderBroadcastRecipientList");
+  safeNamedCall("renderAdminAnnouncements");
+  safeNamedCall("renderAdminLabProjects");
+  safeNamedCall("renderLabProjects");
+  safeNamedCall("renderHomeAboutSection");
+  safeNamedCall("renderHomeBottomInfo");
+  safeNamedCall("renderProfilePage");
+  safeNamedCall("renderRoomSlots");
+  safeNamedCall("renderResponsibleOptions");
+  safeNamedCall("renderEqResponsibleOptions");
+  safeNamedCall("renderResponsibleAdminList");
+  safeNamedCall("renderResponsiblePositionOptions");
+  safeNamedCall("renderResponsiblePositionList");
+  safeNamedCall("renderAdminRoomClosures");
+  safeNamedCall("renderRoomZoneMaps");
+  safeNamedCall("renderEquipmentCatalog");
+  safeNamedCall("renderSelectedEquipmentList");
+  safeNamedCall("renderEquipmentTypeFilterOptions");
+  safeNamedCall("refreshEquipmentFilterLabels");
+  safeNamedCall("refreshSessionLabel");
 };
 
 const activeNav = () => {
@@ -974,6 +982,7 @@ const getCurrentUser = () => {
 Object.assign(globalThis, {
   refreshCropStatusByState,
   getCurrentUser,
+  rerenderDynamicUi,
 });
 
 const roleLabel = (role) =>

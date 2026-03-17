@@ -455,17 +455,13 @@ const bootstrapApp = async () => {
   ensureAdminAccess();
 
   if (isCurrentPage("index.html")) {
-    safeNamedCall("renderAnnouncements");
-    safeNamedCall("renderLabProjects");
-    safeNamedCall("renderHomeBottomInfo");
+    safeNamedCall("rerenderDynamicUi");
     safeNamedCall("setupHomeAboutSection");
-    safeNamedCall("renderHomeAboutSection");
-    safeNamedCall("renderDashboard");
     safeCall(setupHomeBottomEditor);
   }
 
   if (isCurrentPage("profile.html")) {
-    safeNamedCall("renderProfilePage");
+    safeNamedCall("rerenderDynamicUi");
   }
 
   if (isCurrentPage("register.html")) safeCall(registerForm);
@@ -510,12 +506,13 @@ const bootstrapApp = async () => {
         };
       },
     });
-    safeNamedCall("renderRoomSlots");
+    safeNamedCall("rerenderDynamicUi");
   }
 
   if (isCurrentPage("equipment.html")) {
     safeCall(updateBookingAuthUI);
     safeNamedCall("setupEquipmentBookingUI");
+    safeNamedCall("rerenderDynamicUi");
   }
 
   if (isCurrentPage("admin.html")) {
@@ -528,14 +525,7 @@ const bootstrapApp = async () => {
     safeCall(setupAnnouncementEditor);
     safeNamedCall("setupLabProjectsAdmin");
     safeCall(setupAdminQuotaModal);
-    safeNamedCall("renderAdminUsers");
-    safeNamedCall("renderAdminUserProfilePanel");
-    safeNamedCall("renderAdminEquipmentBorrowSummary");
-    safeNamedCall("renderBroadcastRecipientList");
-    safeNamedCall("renderAdminAnnouncements");
-    safeNamedCall("renderAdminLabProjects");
-    safeNamedCall("renderResponsibleAdminList");
-    safeNamedCall("renderAdminRoomClosures");
+    safeNamedCall("rerenderDynamicUi");
     safeCall(adminActions);
   }
 
@@ -564,29 +554,11 @@ const bootstrapApp = async () => {
   updateNavAuthState();
   setupAuthNav();
   setupAdminNav();
-  safeNamedCall("renderDashboard");
-  safeNamedCall("renderAnnouncements");
-  safeNamedCall("renderLabProjects");
-  safeNamedCall("renderHomeBottomInfo");
-  safeNamedCall("renderHomeAboutSection");
-  safeNamedCall("renderProfilePage");
-  safeNamedCall("renderRoomSlots");
-  safeNamedCall("renderRoomApproval");
-  safeNamedCall("renderResponsibleOptions");
-  safeNamedCall("renderEqResponsibleOptions");
+  safeNamedCall("rerenderDynamicUi");
   if (sharedChanged && isCurrentPage("equipment.html")) {
     safeNamedCall("renderEquipmentCatalog");
     safeNamedCall("renderSelectedEquipmentList");
   }
-  safeNamedCall("renderAdminUsers");
-  safeNamedCall("renderAdminUserProfilePanel");
-  safeNamedCall("renderAdminEquipmentBorrowSummary");
-  safeNamedCall("renderBroadcastRecipientList");
-  safeNamedCall("renderAdminAnnouncements");
-  safeNamedCall("renderResponsibleAdminList");
-  safeNamedCall("renderResponsiblePositionOptions");
-  safeNamedCall("renderResponsiblePositionList");
-  safeNamedCall("renderAdminRoomClosures");
 };
 
 bootstrapApp();
