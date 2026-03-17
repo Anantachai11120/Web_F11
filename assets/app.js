@@ -1,5 +1,5 @@
 ﻿(() => {
-  const version = "20260317-02";
+  const version = "20260317-03";
   const page = String(document.documentElement?.dataset?.page || "").trim() || "index";
 
   const commonParts = [

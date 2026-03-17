@@ -559,6 +559,12 @@ const bootstrapApp = async () => {
     safeNamedCall("renderEquipmentCatalog");
     safeNamedCall("renderSelectedEquipmentList");
   }
+
+  // Run one more pass after the page settles to avoid first-load race conditions
+  // where the initial page appears before all module-owned sections finish binding.
+  requestAnimationFrame(() => safeNamedCall("rerenderDynamicUi"));
+  window.setTimeout(() => safeNamedCall("rerenderDynamicUi"), 120);
+  window.addEventListener("load", () => safeNamedCall("rerenderDynamicUi"), { once: true });
 };
 
 bootstrapApp();
