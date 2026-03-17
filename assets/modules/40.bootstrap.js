@@ -56,8 +56,8 @@ const adminActions = () => {
       image = await persistImageSource(image, {
         category: "announcements",
         filenameBase: title || "announcement",
-        maxSize: 1600,
-        quality: 0.9,
+        maxSize: 1920,
+        quality: 0.92,
       });
     } catch {
       setNotice(notice, t("imageRequired"), "error");

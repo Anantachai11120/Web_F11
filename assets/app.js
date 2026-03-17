@@ -1,5 +1,5 @@
-(() => {
-  const version = "20260314-01";
+﻿(() => {
+  const version = "20260317-01";
   const page = String(document.documentElement?.dataset?.page || "").trim() || "index";
 
   const commonParts = [
@@ -78,3 +78,4 @@
     document.head.appendChild(script);
   });
 })();
+

@@ -1,8 +1,8 @@
-import Head from "next/head";
+﻿import Head from "next/head";
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260314-02";
+  const appVersion = "20260317-01";
   return (
     <>
       <Head>
@@ -73,7 +73,20 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               equipmentBookingFormTitle: "Equipment Booking Form",
               equipmentListTitle: "Equipment List"
             } : {
-              navLogin: loggedIn ? "ออกจากระบบ" : "เข้าสู่ระบบ"
+              brandName: "แล็ปชั้นใต้ดิน F11",
+              navHome: "หน้าหลัก",
+              navRooms: "จองห้อง",
+              navEquipment: "จองอุปกรณ์",
+              navProfile: "โปรไฟล์",
+              navAdmin: "แอดมิน",
+              navLogin: loggedIn ? "ออกจากระบบ" : "เข้าสู่ระบบ",
+              homeLabTitle: "เกี่ยวกับห้องปฏิบัติการ UNDERGROUND LAB F11",
+              roomRulesHeroTitle: "กฎการใช้งานห้องปฏิบัติการ Lab-F11",
+              equipmentHeroTitle: "จองอุปกรณ์ห้องปฏิบัติการ",
+              roomRequesterSectionTitle: "ข้อมูลผู้ขอใช้งาน",
+              roomStatusSectionTitle: "สถานะการจอง",
+              equipmentBookingFormTitle: "แบบฟอร์มจองอุปกรณ์",
+              equipmentListTitle: "รายการอุปกรณ์"
             };
 
             var syncNavAndLangUi = function () {
@@ -228,3 +241,4 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
     </>
   );
 }
+

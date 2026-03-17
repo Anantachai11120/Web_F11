@@ -251,8 +251,8 @@ const renderAnnouncements = () => {
                   image = await persistImageSource(image, {
                     category: "announcements",
                     filenameBase: payload.title || current.title || "announcement",
-                    maxSize: 1600,
-                    quality: 0.9,
+                    maxSize: 1920,
+                    quality: 0.92,
                   });
                 } catch {
                   return false;
@@ -322,8 +322,8 @@ const renderAnnouncements = () => {
                 image = await persistImageSource(image, {
                   category: "announcements",
                   filenameBase: payload.title || "announcement",
-                  maxSize: 1600,
-                  quality: 0.9,
+                  maxSize: 1920,
+                  quality: 0.92,
                 });
               } catch {
                 return false;
