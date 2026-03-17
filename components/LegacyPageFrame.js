@@ -2,7 +2,7 @@
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260317-11";
+  const appVersion = "20260317-12";
   const sanitizedBodyHtml = String(bodyHtml || "")
     .replace(/<link[^>]+href=["']assets\/style\.css[^>]*>\s*/gi, "")
     .replace(/<script[^>]+src=["']assets\/app\.js[^>]*><\/script>\s*/gi, "");
@@ -73,7 +73,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               homeLabTitle: "About UNDERGROUND LAB F11",
               roomRulesHeroTitle: "Lab-F11 Room Usage Rules",
               equipmentHeroTitle: "Lab Equipment Booking",
-              roomRequesterSectionTitle: "Requester Information",
+              roomRequesterSectionTitle: "Book",
               roomStatusSectionTitle: "Booking Status",
               equipmentBookingFormTitle: "Equipment Booking Form",
               equipmentListTitle: "Equipment List"
@@ -89,7 +89,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               homeLabTitle: "เกี่ยวกับห้องปฏิบัติการ UNDERGROUND LAB F11",
               roomRulesHeroTitle: "กฎการใช้งานห้องปฏิบัติการ Lab-F11",
               equipmentHeroTitle: "จองอุปกรณ์ห้องปฏิบัติการ",
-              roomRequesterSectionTitle: "ข้อมูลผู้ขอใช้งาน",
+              roomRequesterSectionTitle: "จอง",
               roomStatusSectionTitle: "สถานะการจอง",
               equipmentBookingFormTitle: "แบบฟอร์มจองอุปกรณ์",
               equipmentListTitle: "รายการอุปกรณ์"
@@ -163,8 +163,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
                   var roomBookingTab = document.querySelector('[data-room-tab="booking"]');
                   var roomStatusTab = document.querySelector('[data-room-tab="status"]');
                   if (roomCard) roomCard.hidden = !loggedIn;
-                  if (roomCard && loggedIn) roomCard.hidden = true;
-                  if (roomStatusCard) roomStatusCard.hidden = false;
+                  if (roomStatusCard) roomStatusCard.hidden = loggedIn;
                   if (roomNav) roomNav.hidden = !loggedIn;
                   if (roomLegendMine) roomLegendMine.hidden = !loggedIn;
                   if (roomBookingTab) roomBookingTab.hidden = !loggedIn;

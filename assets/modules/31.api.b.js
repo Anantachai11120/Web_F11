@@ -486,6 +486,9 @@ const renderAdminUserProfilePanel = () => {
   const roomList = load(storageKeys.roomBookings, [])
     .filter((b) => isBookingOwnedByUser(b, user))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  const staffMap = new Map(
+    getResponsibleStaff().map((item) => [String(item.id || ""), item])
+  );
   const eqList = load(storageKeys.equipmentBookings, [])
     .filter((b) => isBookingOwnedByUser(b, user))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
@@ -543,12 +546,33 @@ const renderAdminUserProfilePanel = () => {
           roomList.length
             ? roomList
                 .map(
-                  (r) => `<div class="feed-item">
+                  (r) => {
+                    const responsible = staffMap.get(String(r.responsibleId || ""));
+                    const bookingEnded = isBookingPastEndTime(r);
+                    const isPending = (r.status || "pending") === "pending";
+                    const bookingKey = [
+                      r.createdAt || "",
+                      r.username || r.email || r.requesterName || r.name || "",
+                      r.date || "",
+                      r.timeSlot || "",
+                    ].join("__");
+                    const canReview = hasAdminCapability("room_approval_manage") && isPending && !bookingEnded;
+                    return `<div class="feed-item">
                     <p class="feed-meta">${new Date(r.createdAt).toLocaleString(localeByLang())}</p>
                     <p><strong>${r.room || "Lab-F11"}</strong> | ${r.date || "-"} | ${r.timeSlot || "-"}</p>
                     <p class="muted">${t("profilePurpose")}: ${r.purpose || "-"}</p>
+                    <p class="muted">${t("adminRoomResponsible")}: ${responsible?.name || "-"}</p>
                     <p class="muted">${t("profileStatus")}: <span class="pill ${statusClass(r.status || "pending")}">${statusLabel(r.status || "pending")}</span></p>
-                  </div>`
+                    ${
+                      canReview
+                        ? `<div class="inline-actions" style="margin-top:0.45rem;">
+                            <button type="button" class="btn-small" data-approve-room-booking="${bookingKey}">${getLang() === "th" ? "อนุมัติ" : "Approve"}</button>
+                            <button type="button" class="btn-small danger" data-reject-room-booking="${bookingKey}">${getLang() === "th" ? "ไม่อนุมัติ" : "Reject"}</button>
+                          </div>`
+                        : ""
+                    }
+                  </div>`;
+                  }
                 )
                 .join("")
             : `<p class="muted">${t("profileNoRoomBookings")}</p>`

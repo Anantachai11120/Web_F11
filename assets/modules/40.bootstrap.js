@@ -16,6 +16,16 @@ function safeNamedCall(name, ...args) {
   }
 }
 
+function roomBookingAdminKey(booking) {
+  if (!booking || typeof booking !== "object") return "";
+  return [
+    booking.createdAt || "",
+    booking.username || booking.email || booking.requesterName || booking.name || "",
+    booking.date || "",
+    booking.timeSlot || "",
+  ].join("__");
+}
+
 const adminActions = () => {
   if (!isCurrentPage("admin.html")) return;
   if (!canAccessAdminPage()) return;
@@ -161,6 +171,42 @@ const adminActions = () => {
 
       rooms[index].status = "rejected";
       rooms[index].approvedBy = getSession().username;
+      save(storageKeys.roomBookings, rooms);
+      safeNamedCall("renderRoomApproval");
+      safeNamedCall("renderDashboard");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderProfilePage");
+      safeNamedCall("renderRoomSlots");
+      return;
+    }
+
+    if (target.dataset.approveRoomBooking !== undefined) {
+      if (!requireCapability("room_approval_manage")) return;
+      const bookingKey = String(target.dataset.approveRoomBooking || "").trim();
+      if (!bookingKey) return;
+      const rooms = sortRoomBookingsByUsageDesc(load(storageKeys.roomBookings, []));
+      const booking = rooms.find((item) => roomBookingAdminKey(item) === bookingKey);
+      if (!booking || isBookingPastEndTime(booking)) return;
+      booking.status = "approved";
+      booking.approvedBy = getSession().username;
+      save(storageKeys.roomBookings, rooms);
+      safeNamedCall("renderRoomApproval");
+      safeNamedCall("renderDashboard");
+      safeNamedCall("renderAdminUserProfilePanel");
+      safeNamedCall("renderProfilePage");
+      safeNamedCall("renderRoomSlots");
+      return;
+    }
+
+    if (target.dataset.rejectRoomBooking !== undefined) {
+      if (!requireCapability("room_approval_manage")) return;
+      const bookingKey = String(target.dataset.rejectRoomBooking || "").trim();
+      if (!bookingKey) return;
+      const rooms = sortRoomBookingsByUsageDesc(load(storageKeys.roomBookings, []));
+      const booking = rooms.find((item) => roomBookingAdminKey(item) === bookingKey);
+      if (!booking || isBookingPastEndTime(booking)) return;
+      booking.status = "rejected";
+      booking.approvedBy = getSession().username;
       save(storageKeys.roomBookings, rooms);
       safeNamedCall("renderRoomApproval");
       safeNamedCall("renderDashboard");
