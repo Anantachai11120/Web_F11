@@ -450,6 +450,7 @@ const setupAdminQuotaModal = () => {
     const current = getRoomQuota(users[index]);
     users[index].roomQuotaWeekly = current.weekly + amount;
     users[index].roomQuotaDaily = current.daily;
+    users[index].updatedAt = new Date().toISOString();
     save(storageKeys.users, users);
     setNotice(
       byId("adminNotice"),
@@ -667,4 +668,3 @@ Object.assign(globalThis, {
   renderAdminAnnouncements,
   setupAdminSectionTabs,
 });
-

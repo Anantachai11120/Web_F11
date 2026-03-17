@@ -125,39 +125,46 @@ const mergeUserRecord = (baseUser, nextUser) => {
   const next = nextUser && typeof nextUser === "object" ? { ...nextUser } : {};
   const merged = { ...base };
   Object.entries(next).forEach(([key, value]) => {
-    const current = merged[key];
     if (value === undefined || value === null) return;
     if (typeof value === "string") {
       const trimmed = value.trim();
       if (!trimmed) return;
-      if (typeof current !== "string" || !current.trim()) {
-        merged[key] = value;
-      }
+      merged[key] = value;
       return;
     }
     if (typeof value === "number") {
-      if (!Number.isFinite(Number(current)) || Number(current) <= 0) {
-        merged[key] = value;
-      }
+      if (Number.isFinite(value)) merged[key] = value;
       return;
     }
     if (typeof value === "boolean") {
-      merged[key] = Boolean(current) || value;
+      merged[key] = value;
       return;
     }
-    if (!current) {
-      merged[key] = value;
-    }
+    merged[key] = value;
   });
 
-  const roleRank = { user: 0, teacher: 1, admin: 2 };
-  const baseRole = normalizeUserRole(base.role);
-  const nextRole = normalizeUserRole(next.role);
-  merged.role = roleRank[nextRole] > roleRank[baseRole] ? nextRole : baseRole;
-  merged.verified = Boolean(base.verified) || Boolean(next.verified);
-  merged.suspended = Boolean(base.suspended) || Boolean(next.suspended);
-  merged.roomQuotaDaily = Math.max(1, Number(base.roomQuotaDaily || 1), Number(next.roomQuotaDaily || 1));
-  merged.roomQuotaWeekly = Math.max(1, Number(base.roomQuotaWeekly || 3), Number(next.roomQuotaWeekly || 3));
+  const baseUpdatedAt = Date.parse(base.updatedAt || 0) || 0;
+  const nextUpdatedAt = Date.parse(next.updatedAt || 0) || 0;
+  const nextWins = nextUpdatedAt >= baseUpdatedAt;
+
+  merged.role = normalizeUserRole(nextWins ? (next.role ?? base.role) : (base.role ?? next.role));
+  merged.verified = nextWins
+    ? Boolean(next.verified ?? base.verified)
+    : Boolean(base.verified ?? next.verified);
+  merged.suspended = nextWins
+    ? Boolean(next.suspended ?? base.suspended)
+    : Boolean(base.suspended ?? next.suspended);
+  merged.roomQuotaDaily = Math.max(
+    1,
+    Number(nextWins ? (next.roomQuotaDaily ?? base.roomQuotaDaily ?? 1) : (base.roomQuotaDaily ?? next.roomQuotaDaily ?? 1))
+  );
+  merged.roomQuotaWeekly = Math.max(
+    1,
+    Number(nextWins ? (next.roomQuotaWeekly ?? base.roomQuotaWeekly ?? 3) : (base.roomQuotaWeekly ?? next.roomQuotaWeekly ?? 3))
+  );
+  merged.updatedAt = nextWins
+    ? String(next.updatedAt || base.updatedAt || "")
+    : String(base.updatedAt || next.updatedAt || "");
   return merged;
 };
 
@@ -173,8 +180,8 @@ const mergeUsersCollection = (serverUsers, localUsers) => {
         mergedMap.set(key, mergeUserRecord(current, item));
       });
   };
-  ingest(serverUsers);
   ingest(localUsers);
+  ingest(serverUsers);
   return [...mergedMap.values()];
 };
 

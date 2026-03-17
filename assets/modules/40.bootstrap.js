@@ -180,6 +180,7 @@ const adminActions = () => {
       if (pickedUsername === "anantachai2000") return;
       users[index].role = nextRole;
       users[index].verified = true;
+      users[index].updatedAt = new Date().toISOString();
       save(storageKeys.users, users);
       const session = getSession();
       if (session && session.username === users[index].username) {
@@ -205,6 +206,7 @@ const adminActions = () => {
 
       users[index].role = "admin";
       users[index].verified = true;
+      users[index].updatedAt = new Date().toISOString();
       save(storageKeys.users, users);
       const session = getSession();
       if (session && session.username === users[index].username) {
@@ -229,6 +231,7 @@ const adminActions = () => {
 
       users[index].role = "teacher";
       users[index].verified = true;
+      users[index].updatedAt = new Date().toISOString();
       save(storageKeys.users, users);
       const session = getSession();
       if (session && session.username === users[index].username) {
@@ -265,6 +268,7 @@ const adminActions = () => {
         if (!requireCapability("user_suspend_manage")) return;
         user.suspended = !Boolean(user.suspended);
       }
+      user.updatedAt = new Date().toISOString();
       save(storageKeys.users, users);
       safeNamedCall("renderAdminUsers");
       safeNamedCall("renderAdminUserProfilePanel");

@@ -476,22 +476,27 @@ const setupEquipmentAdminTools = () => {
     });
   }
 
-  addTypeBtn?.addEventListener("click", () => {
-    if (!requireAdminAction()) return;
-    const value = String(newTypeInput?.value || "").trim();
-    if (!value) return;
-    const types = normalizeEquipmentTypes();
-    if (!types.includes(value)) {
-      types.push(value);
-      save(storageKeys.equipmentTypes, types);
-    }
-    renderEquipmentTypeOptions(value);
-    renderEquipmentTypeFilterOptions();
-    renderEquipmentCatalog();
-    if (newTypeInput) newTypeInput.value = "";
-  });
+  if (addTypeBtn && addTypeBtn.dataset.bound !== "1") {
+    addTypeBtn.dataset.bound = "1";
+    addTypeBtn.addEventListener("click", () => {
+      if (!requireAdminAction()) return;
+      const value = String(newTypeInput?.value || "").trim();
+      if (!value) return;
+      const types = normalizeEquipmentTypes();
+      if (!types.includes(value)) {
+        types.push(value);
+        save(storageKeys.equipmentTypes, types);
+      }
+      renderEquipmentTypeOptions(value);
+      renderEquipmentTypeFilterOptions();
+      renderEquipmentCatalog();
+      if (newTypeInput) newTypeInput.value = "";
+    });
+  }
 
-  form.addEventListener("submit", async (e) => {
+  if (!form.dataset.bound) {
+    form.dataset.bound = "1";
+    form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!requireAdminAction()) return;
     const notice = byId("equipmentAdminNotice");
@@ -505,6 +510,7 @@ const setupEquipmentAdminTools = () => {
     }
     const list = normalizeEquipmentItems();
     const existing = editingEquipmentId ? list.find((i) => i.id === editingEquipmentId) : null;
+    const stock = Math.max(1, Number(byId("eqAdminStock")?.value || existing?.stock || 1));
     let image = equipmentCropState.croppedDataUrl || existing?.image || "";
     if (!image) {
       setNotice(notice, t("equipmentAdminImageRequired"), "error");
@@ -551,49 +557,54 @@ const setupEquipmentAdminTools = () => {
     renderEquipmentTypeFilterOptions();
     syncEquipmentEligibility();
   });
+  }
 
-  byId("equipmentAdminList")?.addEventListener("click", (e) => {
-    if (!requireAdminAction()) return;
-    const target = e.target;
-    if (!(target instanceof HTMLElement)) return;
+  const adminList = byId("equipmentAdminList");
+  if (adminList && adminList.dataset.bound !== "1") {
+    adminList.dataset.bound = "1";
+    adminList.addEventListener("click", (e) => {
+      if (!requireAdminAction()) return;
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
 
-    if (target.dataset.editEquipment !== undefined) {
-      const index = Number(target.dataset.editEquipment);
-      const list = normalizeEquipmentItems();
-      const item = list[index];
-      if (!item) return;
-      editingEquipmentId = item.id;
-      byId("eqAdminName").value = item.name || "";
-      if (byId("eqAdminNameEn")) byId("eqAdminNameEn").value = item.nameEn || "";
-      byId("eqAdminStock").value = String(item.stock || 1);
-      renderEquipmentTypeOptions(item.type || "ทั่วไป");
-      equipmentCropState.croppedDataUrl = item.image || "";
-      const img = new Image();
-      img.onload = () => {
-        equipmentCropState.image = img;
-        equipmentCropState.zoom = 1;
-        equipmentCropState.offsetX = 0;
-        equipmentCropState.offsetY = 0;
-        byId("eqCropZoom").value = "1";
-        byId("eqCropX").value = "0";
-        byId("eqCropY").value = "0";
-        drawEquipmentCropCanvas();
-      };
-      img.src = item.image || "";
-      return;
-    }
+      if (target.dataset.editEquipment !== undefined) {
+        const index = Number(target.dataset.editEquipment);
+        const list = normalizeEquipmentItems();
+        const item = list[index];
+        if (!item) return;
+        editingEquipmentId = item.id;
+        byId("eqAdminName").value = item.name || "";
+        if (byId("eqAdminNameEn")) byId("eqAdminNameEn").value = item.nameEn || "";
+        byId("eqAdminStock").value = String(item.stock || 1);
+        renderEquipmentTypeOptions(item.type || "ทั่วไป");
+        equipmentCropState.croppedDataUrl = item.image || "";
+        const img = new Image();
+        img.onload = () => {
+          equipmentCropState.image = img;
+          equipmentCropState.zoom = 1;
+          equipmentCropState.offsetX = 0;
+          equipmentCropState.offsetY = 0;
+          byId("eqCropZoom").value = "1";
+          byId("eqCropX").value = "0";
+          byId("eqCropY").value = "0";
+          drawEquipmentCropCanvas();
+        };
+        img.src = item.image || "";
+        return;
+      }
 
-    if (target.dataset.deleteEquipment !== undefined) {
-      if (!window.confirm(t("confirmDeleteEquipment"))) return;
-      const index = Number(target.dataset.deleteEquipment);
-      const list = normalizeEquipmentItems();
-      if (!list[index]) return;
-      list.splice(index, 1);
-      save(storageKeys.equipmentItems, list);
-      renderEquipmentAdminList();
-      syncEquipmentEligibility();
-    }
-  });
+      if (target.dataset.deleteEquipment !== undefined) {
+        if (!window.confirm(t("confirmDeleteEquipment"))) return;
+        const index = Number(target.dataset.deleteEquipment);
+        const list = normalizeEquipmentItems();
+        if (!list[index]) return;
+        list.splice(index, 1);
+        save(storageKeys.equipmentItems, list);
+        renderEquipmentAdminList();
+        syncEquipmentEligibility();
+      }
+    });
+  }
 };
 
 
