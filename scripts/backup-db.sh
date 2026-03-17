@@ -50,7 +50,7 @@ stamp="$(date +%Y%m%d_%H%M%S)"
 out="$BACKUP_DIR/mysql_${db_name}_${stamp}.sql"
 
 echo "Creating backup: $out"
-"${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysqldump -u${db_user} -p${db_pass} --single-transaction --quick ${db_name}" > "$out"
+"${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysqldump -u${db_user} -p${db_pass} --single-transaction --quick --no-tablespaces ${db_name}" > "$out"
 if [[ "$OUTPUT_GZIP" == "true" ]]; then
   gzip -f "$out"
   out="${out}.gz"

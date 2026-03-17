@@ -40,7 +40,7 @@ $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $outFile = Join-Path $BackupDir "mysql_${dbName}_$stamp.sql"
 
 Write-Host "Creating DB backup to $outFile ..."
-$cmd = "docker exec $ContainerName sh -lc `"mysqldump -u$dbUser -p$dbPass --single-transaction --quick $dbName`""
+$cmd = "docker exec $ContainerName sh -lc `"mysqldump -u$dbUser -p$dbPass --single-transaction --quick --no-tablespaces $dbName`""
 cmd /c "$cmd > `"$outFile`""
 
 if (-not (Test-Path $outFile)) {
