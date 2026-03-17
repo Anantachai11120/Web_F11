@@ -306,51 +306,6 @@
         <article class="card admin-section-panel" data-admin-panel="equipmentSummary" data-admin-min-role="teacher" hidden>
           <h2 data-i18n="adminBorrowSummaryTitle">สรุปการยืมอุปกรณ์</h2>
           <p class="muted" data-i18n="adminBorrowSummaryHint">แสดงรายการอุปกรณ์ที่ถูกยืม และผู้ใช้ที่ยังไม่คืน</p>
-          <section id="equipmentAdminTools" style="margin-top:1rem" hidden>
-            <div class="lab-admin-head">
-              <h3 data-i18n="equipmentAdminSectionTitle">จัดการรายการอุปกรณ์ (แอดมิน)</h3>
-              <button type="button" id="toggleEquipmentAdminBtn" class="btn-small" data-i18n="toggleShowEdit">แสดงฟอร์มแก้ไข</button>
-            </div>
-            <div id="equipmentAdminBody" hidden>
-              <form id="equipmentAdminForm">
-                <label for="eqAdminName" data-i18n="equipmentNameLabel">ชื่ออุปกรณ์</label>
-                <input id="eqAdminName" type="text" data-i18n-placeholder="equipmentNamePlaceholder" placeholder="เช่น กล้องจุลทรรศน์" />
-                <label for="eqAdminNameEn" data-i18n="equipmentNameEnLabel">ชื่ออุปกรณ์ (อังกฤษ)</label>
-                <input id="eqAdminNameEn" type="text" data-i18n-placeholder="equipmentNameEnPlaceholder" placeholder="e.g. Microscope" />
-                <label for="eqAdminType" data-i18n="equipmentTypeLabel">ชนิดอุปกรณ์</label>
-                <select id="eqAdminType"></select>
-                <label for="eqAdminNewType" data-i18n="addEquipmentTypeLabel">เพิ่มชนิดอุปกรณ์ใหม่</label>
-                <div style="display:flex;gap:0.5rem;align-items:center;">
-                  <input id="eqAdminNewType" type="text" data-i18n-placeholder="equipmentTypePlaceholder" placeholder="เช่น งานไม้" />
-                  <button id="eqAddTypeBtn" type="button" class="btn-small" data-i18n="addTypeBtn">เพิ่มชนิด</button>
-                </div>
-                <label for="eqAdminStock" data-i18n="totalStockLabel">จำนวนทั้งหมด</label>
-                <input id="eqAdminStock" type="number" min="1" value="1" />
-                <label for="eqAdminUsage" data-i18n="equipmentUsageLabel">รายละเอียดการใช้งาน</label>
-                <textarea id="eqAdminUsage" data-i18n-placeholder="equipmentUsagePlaceholder" placeholder="เช่น เหมาะกับการวัดสัญญาณวงจรไฟฟ้าความถี่ต่ำถึงกลาง"></textarea>
-                <label for="eqAdminImage" data-i18n="equipmentImageLabel">รูปอุปกรณ์</label>
-                <input id="eqAdminImage" type="file" accept="image/*" />
-                <div class="crop-wrap">
-                  <canvas id="eqCropCanvas" width="360" height="220"></canvas>
-                  <div class="crop-controls">
-                    <label for="eqCropZoom" data-i18n="adminCropZoomLabel">ซูมภาพ</label>
-                    <input id="eqCropZoom" type="range" min="1" max="3" step="0.01" value="1" />
-                    <label for="eqCropX" data-i18n="adminCropXLabel">เลื่อนแนวนอน</label>
-                    <input id="eqCropX" type="range" min="-220" max="220" step="1" value="0" />
-                    <label for="eqCropY" data-i18n="adminCropYLabel">เลื่อนแนวตั้ง</label>
-                    <input id="eqCropY" type="range" min="-220" max="220" step="1" value="0" />
-                    <button id="eqApplyCropBtn" type="button" class="btn-small" data-i18n="adminCropApplyBtn">ครอปรูป</button>
-                  </div>
-                </div>
-                <p id="eqCropStatus" class="muted" data-i18n="cropEmpty">ยังไม่ได้เลือกรูป</p>
-                <button type="submit" data-i18n="saveEquipmentItemBtn">บันทึกรายการอุปกรณ์</button>
-                <div id="equipmentAdminNotice" class="notice" hidden></div>
-              </form>
-              <h3 style="margin-top:1rem;" data-i18n="equipmentListTitle">รายการอุปกรณ์</h3>
-              <div id="equipmentAdminList"></div>
-            </div>
-          </section>
-          <hr />
           <div id="adminEquipmentSummary"></div>
           <div id="adminEquipmentNotice" class="notice" hidden></div>
         </article>
