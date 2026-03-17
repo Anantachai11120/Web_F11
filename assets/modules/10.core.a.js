@@ -821,7 +821,11 @@ const updateNavAuthState = () => {
   const authLinks = Array.from(document.querySelectorAll('.nav a[data-i18n="navLogin"]'));
   authLinks.forEach((link) => {
     if (!(link instanceof HTMLAnchorElement)) return;
+    const icon = link.querySelector(".nav-auth-icon");
     const label = link.querySelector(".nav-label");
+    if (icon instanceof HTMLImageElement) {
+      icon.src = isLoggedIn ? "/image/logout_.png" : "/image/enter.png";
+    }
     if (label) label.textContent = isLoggedIn ? t("navLogout") : t("navLogin");
     else link.textContent = isLoggedIn ? t("navLogout") : t("navLogin");
     link.classList.toggle("logout-pill", isLoggedIn);

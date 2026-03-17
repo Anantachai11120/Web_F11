@@ -214,6 +214,12 @@ html:not(.lang-ready) .lang-select {
   opacity: 0.92;
 }
 
+.nav-auth-icon {
+  width: 16px;
+  height: 16px;
+  filter: invert(31%) sepia(18%) saturate(915%) hue-rotate(128deg) brightness(89%) contrast(89%);
+}
+
 .nav a:hover .nav-icon,
 .nav a:focus-visible .nav-icon {
   filter: invert(41%) sepia(28%) saturate(862%) hue-rotate(123deg) brightness(92%) contrast(89%);
@@ -245,7 +251,7 @@ html:not(.lang-ready) .lang-select {
 }
 
 .nav a[data-i18n="navLogin"] {
-  width: 96px;
+  min-width: 118px;
 }
 
 .nav a[data-i18n="navAdmin"] {
@@ -348,6 +354,10 @@ html:not(.lang-ready) .lang-select {
   background: #dee9fb;
   color: #3e5d93;
   border: 1px solid #c4d7f3;
+}
+
+.nav a.logout-pill .nav-auth-icon {
+  filter: invert(37%) sepia(37%) saturate(1092%) hue-rotate(324deg) brightness(89%) contrast(88%);
 }
 
 .nav a.logout-pill:hover,

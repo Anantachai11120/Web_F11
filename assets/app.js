@@ -1,5 +1,5 @@
 (() => {
-  const version = "20260317-05";
+  const version = "20260317-06";
   const page = String(document.documentElement?.dataset?.page || "").trim() || "index";
   if (window.__labAssetsBootstrapped) return;
   window.__labAssetsBootstrapped = true;

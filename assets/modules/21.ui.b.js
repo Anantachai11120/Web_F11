@@ -129,7 +129,6 @@ const renderHomeAboutSection = () => {
             <img src="${item.image || "image/IconLab.png"}" alt="${item.name}" />
             <h5>${item.name}</h5>
             <p class="about-member-position">${item.position || staffUi("positionFallback")}</p>
-            <p class="about-member-email">${item.email}</p>
           </article>`
         )
         .join("")}</div>`

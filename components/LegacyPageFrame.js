@@ -2,7 +2,7 @@
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260317-05";
+  const appVersion = "20260317-06";
   const sanitizedBodyHtml = String(bodyHtml || "")
     .replace(/<link[^>]+href=["']assets\/style\.css[^>]*>\s*/gi, "")
     .replace(/<script[^>]+src=["']assets\/app\.js[^>]*><\/script>\s*/gi, "");
@@ -104,7 +104,11 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
                 var loginLinks = document.querySelectorAll('.nav a[data-i18n="navLogin"]');
                 for (var j = 0; j < loginLinks.length; j++) {
                   var link = loginLinks[j];
-                  if (dict.navLogin) link.textContent = dict.navLogin;
+                  var icon = link.querySelector(".nav-auth-icon");
+                  var label = link.querySelector(".nav-label");
+                  if (icon) icon.src = loggedIn ? "/image/logout_.png" : "/image/enter.png";
+                  if (label && dict.navLogin) label.textContent = dict.navLogin;
+                  else if (dict.navLogin) link.textContent = dict.navLogin;
                   if (loggedIn) link.classList.add("logout-pill");
                   else link.classList.remove("logout-pill");
                 }
