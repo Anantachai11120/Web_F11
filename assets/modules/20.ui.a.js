@@ -461,6 +461,25 @@ const isBookingPastEndTime = (booking) => {
   return Date.now() > endAt.getTime();
 };
 
+const autoRejectExpiredPendingRoomBookings = () => {
+  const roomBookings = load(storageKeys.roomBookings, []);
+  if (!Array.isArray(roomBookings) || !roomBookings.length) return false;
+  let changed = false;
+  const next = roomBookings.map((booking) => {
+    const status = String(booking?.status || "pending").trim() || "pending";
+    if (status !== "pending" || !isBookingPastEndTime(booking)) return booking;
+    changed = true;
+    return {
+      ...booking,
+      status: "rejected",
+      approvedBy: booking?.approvedBy || "system_auto_reject",
+      updatedAt: new Date().toISOString(),
+    };
+  });
+  if (changed) save(storageKeys.roomBookings, next);
+  return changed;
+};
+
 const canCancelBookingWithinWindow = (booking, graceMinutes = 15) => {
   const startAt = parseBookingStartAt(booking);
   if (!startAt) return true;
@@ -1084,6 +1103,7 @@ Object.assign(globalThis, {
   renderHomeBottomInfo,
   renderProfilePage,
   renderRoomSlots,
+  autoRejectExpiredPendingRoomBookings,
   setupRoomBookingUI,
   setupRoomSectionTabs,
   setupEquipmentRulesPopup,

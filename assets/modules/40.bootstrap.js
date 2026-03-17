@@ -186,7 +186,7 @@ const adminActions = () => {
       if (!bookingKey) return;
       const rooms = sortRoomBookingsByUsageDesc(load(storageKeys.roomBookings, []));
       const booking = rooms.find((item) => roomBookingAdminKey(item) === bookingKey);
-      if (!booking || isBookingPastEndTime(booking)) return;
+      if (!booking) return;
       booking.status = "approved";
       booking.approvedBy = getSession().username;
       save(storageKeys.roomBookings, rooms);
@@ -204,7 +204,7 @@ const adminActions = () => {
       if (!bookingKey) return;
       const rooms = sortRoomBookingsByUsageDesc(load(storageKeys.roomBookings, []));
       const booking = rooms.find((item) => roomBookingAdminKey(item) === bookingKey);
-      if (!booking || isBookingPastEndTime(booking)) return;
+      if (!booking) return;
       booking.status = "rejected";
       booking.approvedBy = getSession().username;
       save(storageKeys.roomBookings, rooms);
@@ -512,6 +512,7 @@ const bootstrapApp = async () => {
   seedEquipmentTypes();
   migrateLegacyData();
   normalizeEquipmentBookingsData();
+  safeNamedCall("autoRejectExpiredPendingRoomBookings");
   updateVisitorCounters();
   normalizeUsers();
   ensureAdminAccess();
@@ -600,6 +601,7 @@ const bootstrapApp = async () => {
 
   if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html")) {
     syncApprovalsAndReturns().then(() => {
+      safeNamedCall("autoRejectExpiredPendingRoomBookings");
       safeNamedCall("renderDashboard");
       safeNamedCall("renderRoomApproval");
       safeNamedCall("renderRoomSlots");
@@ -608,6 +610,7 @@ const bootstrapApp = async () => {
 
     setInterval(() => {
       syncApprovalsAndReturns().then(() => {
+        safeNamedCall("autoRejectExpiredPendingRoomBookings");
         safeNamedCall("renderDashboard");
         safeNamedCall("renderRoomApproval");
         safeNamedCall("renderRoomSlots");
