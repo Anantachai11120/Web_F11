@@ -526,12 +526,14 @@ const bootstrapApp = async () => {
     safeCall(setupEquipmentAdminTools);
     safeCall(setupHomeBottomEditor);
     safeCall(setupAnnouncementEditor);
+    safeNamedCall("setupLabProjectsAdmin");
     safeCall(setupAdminQuotaModal);
     safeNamedCall("renderAdminUsers");
     safeNamedCall("renderAdminUserProfilePanel");
     safeNamedCall("renderAdminEquipmentBorrowSummary");
     safeNamedCall("renderBroadcastRecipientList");
     safeNamedCall("renderAdminAnnouncements");
+    safeNamedCall("renderAdminLabProjects");
     safeNamedCall("renderResponsibleAdminList");
     safeNamedCall("renderAdminRoomClosures");
     safeCall(adminActions);
