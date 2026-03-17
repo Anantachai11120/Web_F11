@@ -2,7 +2,7 @@
 import Script from "next/script";
 
 export default function LegacyPageFrame({ title, bodyHtml }) {
-  const appVersion = "20260317-03";
+  const appVersion = "20260317-04";
   const sanitizedBodyHtml = String(bodyHtml || "")
     .replace(/<link[^>]+href=["']assets\/style\.css[^>]*>\s*/gi, "")
     .replace(/<script[^>]+src=["']assets\/app\.js[^>]*><\/script>\s*/gi, "");
@@ -65,6 +65,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               navHome: "Home",
               navRooms: "Room Booking",
               navEquipment: "Equipment Booking",
+              navAbout: "About Us",
               navProfile: "Profile",
               navAdmin: "Admin",
               navLogin: loggedIn ? "Logout" : "Login",
@@ -80,6 +81,7 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               navHome: "หน้าหลัก",
               navRooms: "จองห้อง",
               navEquipment: "จองอุปกรณ์",
+              navAbout: "เกี่ยวกับเรา",
               navProfile: "โปรไฟล์",
               navAdmin: "แอดมิน",
               navLogin: loggedIn ? "ออกจากระบบ" : "เข้าสู่ระบบ",
@@ -193,7 +195,11 @@ export default function LegacyPageFrame({ title, bodyHtml }) {
               if (!nodes.length) return false;
               for (var i = 0; i < nodes.length; i++) {
                 var key = nodes[i].getAttribute("data-i18n");
-                if (key && dict[key]) nodes[i].textContent = dict[key];
+                if (key && dict[key]) {
+                  var label = nodes[i].querySelector ? nodes[i].querySelector(".nav-label") : null;
+                  if (label) label.textContent = dict[key];
+                  else nodes[i].textContent = dict[key];
+                }
               }
               return true;
             };

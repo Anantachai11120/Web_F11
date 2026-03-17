@@ -599,7 +599,9 @@ const applyTranslations = () => {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
     if (!key) return;
-    el.textContent = t(key);
+    const label = el.querySelector?.(".nav-label");
+    if (label) label.textContent = t(key);
+    else el.textContent = t(key);
   });
 
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
@@ -817,7 +819,9 @@ const updateNavAuthState = () => {
   const authLinks = Array.from(document.querySelectorAll('.nav a[data-i18n="navLogin"]'));
   authLinks.forEach((link) => {
     if (!(link instanceof HTMLAnchorElement)) return;
-    link.textContent = isLoggedIn ? t("navLogout") : t("navLogin");
+    const label = link.querySelector(".nav-label");
+    if (label) label.textContent = isLoggedIn ? t("navLogout") : t("navLogin");
+    else link.textContent = isLoggedIn ? t("navLogout") : t("navLogin");
     link.classList.toggle("logout-pill", isLoggedIn);
     if (!link.dataset.logoutBound) {
       link.dataset.logoutBound = "1";

@@ -108,6 +108,7 @@ body.no-scroll {
   align-items: center;
   justify-content: space-between;
   gap: 0.9rem;
+  flex-wrap: nowrap;
   padding: 0.9rem 0;
 }
 
@@ -116,19 +117,21 @@ body.no-scroll {
   font-size: 1.15rem;
   letter-spacing: 0.3px;
   margin: 0;
+  display: none;
 }
 
 .brand-link {
   display: inline-flex;
   align-items: center;
   gap: 0.62rem;
+  flex: 0 0 auto;
   text-decoration: none;
   color: var(--ink);
 }
 
 .brand-logo {
-  width: 76px;
-  height: 76px;
+  width: 92px;
+  height: 92px;
   border-radius: 10px;
   object-fit: cover;
   border: 1px solid #d8e7ee;
@@ -173,6 +176,9 @@ html:not(.lang-ready) .lang-select {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
   gap: 0.32rem;
   min-height: 52px;
 }
@@ -192,21 +198,50 @@ html:not(.lang-ready) .lang-select {
   white-space: nowrap;
 }
 
+.nav-link-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+}
+
+.nav-icon {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  filter: invert(31%) sepia(14%) saturate(721%) hue-rotate(124deg) brightness(91%) contrast(90%);
+  opacity: 0.92;
+}
+
+.nav a:hover .nav-icon,
+.nav a:focus-visible .nav-icon {
+  filter: invert(41%) sepia(28%) saturate(862%) hue-rotate(123deg) brightness(92%) contrast(89%);
+}
+
+.nav-label {
+  display: inline-block;
+  line-height: 1;
+}
+
 .nav a[data-i18n="navHome"] {
-  width: 78px;
+  min-width: 96px;
 }
 
 .nav a[data-i18n="navRooms"] {
-  width: 112px;
+  min-width: 124px;
 }
 
 .nav a[data-i18n="navEquipment"] {
-  width: 156px;
-  margin-left: 0.3rem;
+  min-width: 172px;
+}
+
+.nav a[data-i18n="navAbout"] {
+  min-width: 134px;
 }
 
 .nav a[data-i18n="navProfile"] {
-  width: 82px;
+  min-width: 102px;
 }
 
 .nav a[data-i18n="navLogin"] {
@@ -544,6 +579,15 @@ button:hover {
     width: auto !important;
     min-width: 0;
     padding: 0 0.42rem;
+  }
+
+  .nav-link-content {
+    gap: 0.28rem;
+  }
+
+  .nav-icon {
+    width: 13px;
+    height: 13px;
   }
 
   .lang-inline {

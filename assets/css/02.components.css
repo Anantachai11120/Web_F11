@@ -15,8 +15,8 @@
   }
 
   .brand-logo {
-    width: 60px;
-    height: 60px;
+    width: 72px;
+    height: 72px;
   }
 
   .booking-process-grid {
@@ -1444,5 +1444,28 @@ html[data-page="admin"][data-role="teacher"] [data-admin-min-role="admin"] {
 
   .room-zone-detail-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) {
+  .topbar {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .nav {
+    flex-wrap: nowrap;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  .lang-inline {
+    margin-left: auto;
+  }
+
+  .nav-profile-shell {
+    align-self: center;
   }
 }
