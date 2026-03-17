@@ -82,6 +82,25 @@ const renderLabProjectsText = () => {
   setPlaceholder("labProjectContent", labProjectUi("contentPlaceholder"));
 };
 
+const setLabProjectImagePreview = (src) => {
+  const fileInput = byId("labProjectImage");
+  if (!fileInput) return;
+  let preview = byId("labProjectImagePreview");
+  if (!preview) {
+    preview = document.createElement("img");
+    preview.id = "labProjectImagePreview";
+    preview.className = "announcement-editor-preview";
+    preview.alt = "project preview";
+    preview.hidden = true;
+    fileInput.insertAdjacentElement("afterend", preview);
+  }
+  if (!preview) return;
+  const value = String(src || "").trim();
+  preview.hidden = !value;
+  if (value) preview.src = value;
+  else preview.removeAttribute("src");
+};
+
 const normalizeLabProject = (project, index = 0) => {
   const item = project && typeof project === "object" ? project : {};
   return {
@@ -235,6 +254,7 @@ const resetLabProjectCropTool = () => {
   if (zoom) zoom.value = "1";
   if (x) x.value = "0";
   if (y) y.value = "0";
+  setLabProjectImagePreview("");
   drawLabProjectCropCanvas();
   updateLabProjectCropStatus();
 };
@@ -266,6 +286,8 @@ const setupLabProjectCropTool = () => {
     }
     const reader = new FileReader();
     reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      setLabProjectImagePreview(dataUrl);
       const img = new Image();
       img.onload = () => {
         labProjectCropState.image = img;
@@ -279,7 +301,11 @@ const setupLabProjectCropTool = () => {
         labProjectCropState.croppedDataUrl = createLabProjectCroppedDataUrl();
         updateLabProjectCropStatus();
       };
-      img.src = String(reader.result || "");
+      img.onerror = () => {
+        labProjectCropState.image = null;
+        drawLabProjectCropCanvas();
+      };
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   });
