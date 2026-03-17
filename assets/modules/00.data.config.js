@@ -10,6 +10,7 @@ const storageKeys = {
   lang: "lab_lang",
   homeInfo: "lab_home_info",
   responsibleStaff: "lab_responsible_staff",
+  staffPositions: "lab_staff_positions",
   roomClosures: "lab_room_closures",
   roomZoneMap: "lab_room_zone_map",
   notifications: "lab_notifications",

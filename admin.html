@@ -130,7 +130,7 @@
           <h2 data-i18n="adminTabRoomApproval">อนุมัติการจองห้อง</h2>
           <div class="admin-room-close-wrap">
             <h3 data-i18n="adminRoomCloseTitle">ปิดการใช้งานห้องแลป</h3>
-            <p class="muted" data-i18n="adminRoomCloseHint">แอดมินสามารถปิดทั้งวันหรือปิดเฉพาะช่วงเวลา เพื่อไม่ให้ผู้ใช้จองห้อง/อุปกรณ์ได้</p>
+            <p class="muted" data-i18n="adminRoomCloseHint">ผู้ดูแลสามารถปิดทั้งวันหรือปิดเฉพาะช่วงเวลา เพื่อไม่ให้ผู้ใช้จองห้อง/อุปกรณ์ได้</p>
             <form id="adminRoomCloseForm" class="admin-room-close-form">
               <div class="room-filter-grid">
                 <div class="room-filter-item">
@@ -256,9 +256,20 @@
 
         <article class="card admin-section-panel" data-admin-panel="responsibleStaff" data-admin-min-role="teacher" hidden>
           <h2 data-i18n="adminTabResponsible">จัดการบุคลากรผู้รับผิดชอบแลป</h2>
+          <div class="staff-position-tools">
+            <label for="responsiblePositionName">เพิ่มหมวดหมู่ตำแหน่ง</label>
+            <div class="staff-position-inline">
+              <input id="responsiblePositionName" type="text" placeholder="เช่น นักวิจัย" />
+              <button type="button" id="addResponsiblePositionBtn" class="btn-small">เพิ่มหมวดหมู่</button>
+            </div>
+            <div id="responsiblePositionList" class="staff-position-list"></div>
+          </div>
           <form id="responsibleForm">
             <label for="responsibleName" data-i18n="adminResponsibleNameLabel">ชื่อบุคลากร</label>
             <input id="responsibleName" type="text" data-i18n-placeholder="adminResponsibleNamePlaceholder" placeholder="เช่น อ.สุชาติ ใจดี" />
+
+            <label for="responsiblePosition">ตำแหน่ง / หมวดหมู่</label>
+            <select id="responsiblePosition"></select>
 
             <label for="responsibleEmail" data-i18n="adminResponsibleEmailLabel">อีเมล</label>
             <input id="responsibleEmail" type="email" placeholder="name@univ.ac.th" />
@@ -268,6 +279,20 @@
 
             <label for="responsibleImageFile" data-i18n="adminResponsibleImageFileLabel">หรืออัปโหลดรูปจากคอม</label>
             <input id="responsibleImageFile" type="file" accept="image/*" />
+
+            <div class="crop-wrap">
+              <canvas id="responsibleCropCanvas" width="320" height="320"></canvas>
+              <div class="crop-controls">
+                <label for="responsibleCropZoom">ซูมภาพบุคลากร</label>
+                <input id="responsibleCropZoom" type="range" min="1" max="3" step="0.01" value="1" />
+                <label for="responsibleCropX">เลื่อนแนวนอน</label>
+                <input id="responsibleCropX" type="range" min="-180" max="180" step="1" value="0" />
+                <label for="responsibleCropY">เลื่อนแนวตั้ง</label>
+                <input id="responsibleCropY" type="range" min="-180" max="180" step="1" value="0" />
+                <button id="applyResponsibleCropBtn" type="button" class="btn-small">ครอปรูปบุคลากร</button>
+              </div>
+            </div>
+            <p id="responsibleCropStatus" class="muted">ยังไม่ได้เลือกรูปบุคลากร</p>
 
             <button type="submit" data-i18n="adminResponsibleAddBtn">เพิ่มบุคลากร</button>
             <div id="responsibleNotice" class="notice" hidden></div>

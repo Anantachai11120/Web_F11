@@ -140,7 +140,7 @@ const i18n = {
     roomRulesStep2Desc: "ต้องเลือกบุคลากรผู้รับผิดชอบก่อนส่งคำขอ",
     roomRulesStep3Title: "รอยืนยัน",
     roomRulesStep3Desc: "ระบบจะส่งอีเมลแจ้งเตือนเพื่อยืนยันการจอง",
-    roomRequesterSectionTitle: "ข้อมูลผู้ขอใช้งาน",
+    roomRequesterSectionTitle: "ข้อมูลการจองของผู้ใช้งาน",
     roomStatusSectionTitle: "สถานะการจอง",
     roomStatusSectionHint: "เลือกวันและเวลาเพื่อดูจำนวนที่จองแล้ว และจำนวนที่ยังว่าง",
     roomLegendAvailable: "ว่าง",

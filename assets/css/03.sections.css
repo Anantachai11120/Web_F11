@@ -83,6 +83,13 @@
   color: #2d3d4d;
 }
 
+.responsible-role {
+  margin: 0.14rem 0 0;
+  color: #5f7f90;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .responsible-email {
   margin: 0.12rem 0 0;
   color: #607181;
@@ -109,6 +116,135 @@
   border: 1px solid #cadce3;
 }
 
+.staff-position-tools {
+  margin-bottom: 0.9rem;
+}
+
+.staff-position-inline {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.staff-position-inline input {
+  flex: 1;
+}
+
+.staff-position-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.staff-position-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid #cfe0e8;
+  background: rgba(247, 251, 253, 0.96);
+}
+
+.staff-position-chip button {
+  border: 0;
+  background: transparent;
+  color: #b45b52;
+  padding: 0;
+  width: auto;
+  min-width: 0;
+  box-shadow: none;
+}
+
+.lab-about {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem 1rem;
+  border-radius: 18px;
+  border: 1px solid #d6e7ee;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 24px rgba(116, 144, 162, 0.08);
+}
+
+.lab-about summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+  gap: 0.8rem;
+}
+
+.lab-about summary::-webkit-details-marker {
+  display: none;
+}
+
+.lab-about summary span {
+  color: #58768a;
+  font-weight: 700;
+}
+
+.lab-about summary strong {
+  color: #284253;
+  font-size: 1.02rem;
+}
+
+.lab-about-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0.9rem 0 0.85rem;
+}
+
+.lab-about-controls label {
+  margin: 0;
+  min-width: 115px;
+  color: #58768a;
+  font-weight: 700;
+}
+
+.about-member-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+
+.about-member-card {
+  border: 1px solid #d6e6ed;
+  border-radius: 16px;
+  padding: 0.9rem;
+  background: linear-gradient(180deg, rgba(250, 253, 255, 0.98), rgba(240, 248, 252, 0.96));
+  text-align: center;
+}
+
+.about-member-card img {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #d4e6ed;
+  margin: 0 auto 0.65rem;
+}
+
+.about-member-card h5 {
+  margin: 0;
+  font-size: 1rem;
+  color: #264051;
+}
+
+.about-member-position {
+  margin: 0.3rem 0 0;
+  color: #5f8092;
+  font-weight: 700;
+}
+
+.about-member-email {
+  margin: 0.3rem 0 0;
+  color: #637586;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
 .crop-wrap {
   margin-top: 0.4rem;
   border: 1px solid var(--line);
@@ -119,7 +255,8 @@
 
 #cropCanvas,
 #eqCropCanvas,
-#labProjectCropCanvas {
+#labProjectCropCanvas,
+#responsibleCropCanvas {
   width: 100%;
   max-width: 360px;
   border-radius: 12px;

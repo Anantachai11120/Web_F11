@@ -10,6 +10,12 @@ const seedResponsibleStaff = () => {
   save(storageKeys.responsibleStaff, defaultResponsibleStaff);
 };
 
+const seedStaffPositions = () => {
+  const exists = localStorage.getItem(storageKeys.staffPositions);
+  if (exists) return;
+  save(storageKeys.staffPositions, defaultStaffPositions);
+};
+
 const seedEquipmentItems = () => {
   const exists = localStorage.getItem(storageKeys.equipmentItems);
   if (exists) return;
