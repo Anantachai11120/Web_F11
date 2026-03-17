@@ -1,7 +1,8 @@
 param(
   [string]$EnvFile = ".env",
   [string]$BackupDir = "backups",
-  [string]$ContainerName = "weblab-mysql"
+  [string]$ContainerName = "weblab-mysql",
+  [string]$UploadsDir = "data/uploads"
 )
 
 Set-StrictMode -Version Latest
@@ -45,6 +46,13 @@ cmd /c "$cmd > `"$outFile`""
 
 if (-not (Test-Path $outFile)) {
   throw "Backup file was not created."
+}
+
+if (Test-Path $UploadsDir) {
+  $uploadsOut = Join-Path $BackupDir "uploads_$stamp.zip"
+  Write-Host "Creating uploads backup to $uploadsOut ..."
+  if (Test-Path $uploadsOut) { Remove-Item $uploadsOut -Force }
+  Compress-Archive -Path (Join-Path $UploadsDir "*") -DestinationPath $uploadsOut -Force
 }
 
 Write-Host "Backup complete: $outFile"

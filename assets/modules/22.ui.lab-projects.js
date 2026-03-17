@@ -8,6 +8,8 @@ const labProjectCropState = {
   offsetY: 0,
   croppedDataUrl: "",
 };
+const LAB_PROJECT_EXPORT_WIDTH = 1920;
+const LAB_PROJECT_EXPORT_HEIGHT = 1080;
 
 const labProjectText = () =>
   getLang() === "th"
@@ -49,7 +51,6 @@ const labProjectText = () =>
         saved: "Lab project saved.",
         confirmDelete: "Confirm deleting this project?",
       };
-
 const labProjectUi = (key, vars = {}) => {
   let out = labProjectText()[key] || key;
   Object.keys(vars).forEach((name) => {
@@ -134,11 +135,79 @@ const drawLabProjectCropCanvas = () => {
   ctx.drawImage(img, dx, dy, drawW, drawH);
 };
 
-const createLabProjectCroppedDataUrl = () => {
-  const canvas = byId("labProjectCropCanvas");
+const renderLabProjectCropToCanvas = (canvas, quality = 0.93) => {
   if (!canvas || !labProjectCropState.image) return "";
-  return canvas.toDataURL("image/png", 0.95);
+  const previewCanvas = byId("labProjectCropCanvas");
+  const previewW = Math.max(1, Number(previewCanvas?.width || 360));
+  const previewH = Math.max(1, Number(previewCanvas?.height || 220));
+  const targetW = Math.max(1, Number(canvas.width || LAB_PROJECT_EXPORT_WIDTH));
+  const targetH = Math.max(1, Number(canvas.height || LAB_PROJECT_EXPORT_HEIGHT));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  ctx.clearRect(0, 0, targetW, targetH);
+  ctx.fillStyle = "#f7fbfc";
+  ctx.fillRect(0, 0, targetW, targetH);
+
+  const img = labProjectCropState.image;
+  const baseScale = Math.max(targetW / img.width, targetH / img.height);
+  const drawScale = baseScale * labProjectCropState.zoom;
+  const drawW = img.width * drawScale;
+  const drawH = img.height * drawScale;
+  const offsetX = labProjectCropState.offsetX * (targetW / previewW);
+  const offsetY = labProjectCropState.offsetY * (targetH / previewH);
+  const dx = (targetW - drawW) / 2 + offsetX;
+  const dy = (targetH - drawH) / 2 + offsetY;
+  ctx.drawImage(img, dx, dy, drawW, drawH);
+  return canvas.toDataURL("image/jpeg", quality);
 };
+
+const createLabProjectCroppedDataUrl = () => {
+  const canvas = document.createElement("canvas");
+  canvas.width = LAB_PROJECT_EXPORT_WIDTH;
+  canvas.height = LAB_PROJECT_EXPORT_HEIGHT;
+  return renderLabProjectCropToCanvas(canvas, 0.94);
+};
+
+const shrinkLabProjectImageDataUrl = (dataUrl, maxLength = 320000) =>
+  new Promise((resolve) => {
+    if (!dataUrl || typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
+      resolve("");
+      return;
+    }
+    if (dataUrl.length <= maxLength) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      let scale = 1;
+      let quality = 0.92;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl.slice(0, maxLength));
+        return;
+      }
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        canvas.width = w;
+        canvas.height = h;
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        const next = canvas.toDataURL("image/jpeg", quality);
+        if (next.length <= maxLength || attempt === 7) {
+          resolve(next);
+          return;
+        }
+        scale *= 0.94;
+        quality = Math.max(0.72, quality - 0.03);
+      }
+      resolve(dataUrl);
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 
 const updateLabProjectCropStatus = () => {
   const status = byId("labProjectCropStatus");
@@ -148,7 +217,7 @@ const updateLabProjectCropStatus = () => {
     return;
   }
   if (labProjectCropState.image) {
-    status.textContent = getLang() === "th" ? "เลือกรูปแล้ว กดครอปเพื่อใช้งาน" : "Image loaded. Crop it to apply.";
+    status.textContent = getLang() === "th" ? "เลือกรูปแล้ว ระบบจะใช้ภาพนี้อัตโนมัติ หรือกดครอปเพื่อจัดเฟรม" : "Image loaded. It will be used automatically, or crop it to frame the slide.";
     return;
   }
   status.textContent = getLang() === "th" ? "ยังไม่ได้เลือกรูปผลงาน" : "No project image selected.";
@@ -207,6 +276,7 @@ const setupLabProjectCropTool = () => {
         x.value = "0";
         y.value = "0";
         drawLabProjectCropCanvas();
+        labProjectCropState.croppedDataUrl = createLabProjectCroppedDataUrl();
         updateLabProjectCropStatus();
       };
       img.src = String(reader.result || "");
@@ -469,11 +539,27 @@ const setupLabProjectsAdmin = () => {
     let image = String(labProjectCropState.croppedDataUrl || "").trim();
     if (!image) {
       try {
-        image = await fileToDataUrl(file);
+        image = createLabProjectCroppedDataUrl() || (await optimizeImageFileToDataUrl(file, 1280, 0.9));
       } catch {
         setNotice(notice, t("imageRequired"), "error");
         return;
       }
+    }
+    image = await shrinkLabProjectImageDataUrl(image);
+    if (!image) {
+      setNotice(notice, t("imageRequired"), "error");
+      return;
+    }
+    try {
+      image = await persistImageSource(image, {
+        category: "projects",
+        filenameBase: title || "project",
+        maxSize: 1920,
+        quality: 0.92,
+      });
+    } catch {
+      setNotice(notice, t("imageRequired"), "error");
+      return;
     }
     const list = getLabProjects();
     list.push(

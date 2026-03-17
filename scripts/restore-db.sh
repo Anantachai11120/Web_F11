@@ -12,6 +12,8 @@ fi
 ENV_FILE="${ENV_FILE:-.env}"
 SERVICE_NAME="${SERVICE_NAME:-mysql}"
 INPUT_FILE="$1"
+UPLOADS_ARCHIVE="${2:-}"
+UPLOADS_DIR="${UPLOADS_DIR:-data/uploads}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is not installed." >&2
@@ -53,10 +55,25 @@ if [[ ! -f "$INPUT_FILE" ]]; then
   exit 1
 fi
 
+if [[ -z "$UPLOADS_ARCHIVE" ]]; then
+  base_name="$(basename "$INPUT_FILE")"
+  stamp="$(printf '%s' "$base_name" | sed -E 's/^mysql_[^_]+_([0-9]{8}_[0-9]{6})\.sql(\.gz)?$/\1/')"
+  guessed_archive="$(dirname "$INPUT_FILE")/uploads_${stamp}.tar.gz"
+  if [[ -f "$guessed_archive" ]]; then
+    UPLOADS_ARCHIVE="$guessed_archive"
+  fi
+fi
+
 echo "Restoring database ${db_name} from $INPUT_FILE"
 if [[ "$INPUT_FILE" == *.gz ]]; then
   gunzip -c "$INPUT_FILE" | "${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysql -u${db_user} -p${db_pass} ${db_name}"
 else
   cat "$INPUT_FILE" | "${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysql -u${db_user} -p${db_pass} ${db_name}"
+fi
+if [[ -n "$UPLOADS_ARCHIVE" && -f "$UPLOADS_ARCHIVE" ]]; then
+  echo "Restoring uploads from $UPLOADS_ARCHIVE"
+  mkdir -p "$(dirname "$UPLOADS_DIR")"
+  rm -rf "$UPLOADS_DIR"
+  tar -xzf "$UPLOADS_ARCHIVE" -C "$(dirname "$UPLOADS_DIR")"
 fi
 echo "Restore complete."

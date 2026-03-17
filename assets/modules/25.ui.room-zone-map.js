@@ -714,7 +714,21 @@ const setupRoomZoneAdminEditor = () => {
       const draft = ensureRoomZoneEditorDraft();
       const fileImage = await readImageInputToDataUrl("adminRoomZoneBaseFile");
       const urlImage = String(byId("adminRoomZoneBaseUrl")?.value || "").trim();
-      draft.baseImage = fileImage || urlImage || draft.baseImage || defaultRoomZoneMapConfig.baseImage;
+      let baseImage = fileImage || urlImage || draft.baseImage || defaultRoomZoneMapConfig.baseImage;
+      if (baseImage.startsWith("data:image/")) {
+        try {
+          baseImage = await persistImageSource(baseImage, {
+            category: "room-maps",
+            filenameBase: "room-map",
+            maxSize: 1920,
+            quality: 0.92,
+          });
+        } catch {
+          roomZoneEditorSetNotice(getLang() === "th" ? "อัปโหลดภาพแผนผังไม่สำเร็จ" : "Failed to upload room map.", "error");
+          return;
+        }
+      }
+      draft.baseImage = baseImage;
       saveRoomZoneEditorDraft();
       roomZoneEditorSetNotice(roomZoneUi("editorBaseUpdated"));
       renderRoomZoneAdminEditor();
@@ -760,6 +774,38 @@ const setupRoomZoneAdminEditor = () => {
         roomZoneEditorSetNotice(getLang() === "th" ? "รหัสโซนนี้ถูกใช้แล้ว" : "Zone id already exists.", "error");
         return;
       }
+      let normalImage = normalFile || normalUrl || editing?.normalImage || "";
+      let bookedImage = bookedFile || bookedUrl || editing?.bookedImage || "";
+      let actualImage = actualFile || actualUrl || editing?.actualImage || "";
+      try {
+        if (normalImage.startsWith("data:image/")) {
+          normalImage = await persistImageSource(normalImage, {
+            category: "room-zones",
+            filenameBase: `${label || id || "zone"}-normal`,
+            maxSize: 1200,
+            quality: 0.9,
+          });
+        }
+        if (bookedImage.startsWith("data:image/")) {
+          bookedImage = await persistImageSource(bookedImage, {
+            category: "room-zones",
+            filenameBase: `${label || id || "zone"}-booked`,
+            maxSize: 1200,
+            quality: 0.9,
+          });
+        }
+        if (actualImage.startsWith("data:image/")) {
+          actualImage = await persistImageSource(actualImage, {
+            category: "room-zones",
+            filenameBase: `${label || id || "zone"}-actual`,
+            maxSize: 1600,
+            quality: 0.92,
+          });
+        }
+      } catch {
+        roomZoneEditorSetNotice(getLang() === "th" ? "อัปโหลดรูปโซนไม่สำเร็จ" : "Failed to upload zone image.", "error");
+        return;
+      }
       const next = normalizeRoomZoneEntry(
         {
           id,
@@ -768,9 +814,9 @@ const setupRoomZoneAdminEditor = () => {
           y: editing?.y ?? 20,
           width,
           height,
-          normalImage: normalFile || normalUrl || editing?.normalImage || "",
-          bookedImage: bookedFile || bookedUrl || editing?.bookedImage || "",
-          actualImage: actualFile || actualUrl || editing?.actualImage || "",
+          normalImage,
+          bookedImage,
+          actualImage,
         },
         draft.zones.length
       );

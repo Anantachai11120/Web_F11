@@ -1,4 +1,4 @@
-function safeCall(fn, ...args) {
+﻿function safeCall(fn, ...args) {
   if (typeof fn !== "function") return;
   try {
     return fn(...args);
@@ -32,7 +32,7 @@ const adminActions = () => {
   const form = byId("announcementForm");
   const broadcastForm = byId("adminBroadcastForm");
   const broadcastGroup = byId("broadcastGroup");
-  form?.addEventListener("submit", (e) => {
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!requireCapability("announcement_manage")) return;
     const type = byId("announceType").value;
@@ -51,11 +51,23 @@ const adminActions = () => {
     }
 
     const list = load(storageKeys.announcements);
+    let image = cropState.croppedDataUrl;
+    try {
+      image = await persistImageSource(image, {
+        category: "announcements",
+        filenameBase: title || "announcement",
+        maxSize: 1600,
+        quality: 0.9,
+      });
+    } catch {
+      setNotice(notice, t("imageRequired"), "error");
+      return;
+    }
     list.push({
       type: normalizeAnnouncementType(type),
       title,
       content,
-      image: cropState.croppedDataUrl,
+      image,
       createdAt: new Date().toISOString(),
       author: session.username,
     });
@@ -272,14 +284,14 @@ const adminActions = () => {
         setNotice(notice, t("adminBorrowNoEmail"), "error");
         return;
       }
-      const subject = `แจ้งเตือนคืนอุปกรณ์ ${booking.item || ""}`;
+      const subject = `à¹à¸ˆà¹‰à¸‡à¹€à¸•à¸·à¸­à¸™à¸„à¸·à¸™à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ ${booking.item || ""}`;
       const message = [
-        `สวัสดี ${booking.name || booking.requesterName || booking.username || ""}`,
+        `à¸ªà¸§à¸±à¸ªà¸”à¸µ ${booking.name || booking.requesterName || booking.username || ""}`,
         "",
-        `กรุณาคืนอุปกรณ์: ${booking.item || "-"}`,
-        `จำนวน: ${booking.quantity || "-"}`,
-        `วันที่ใช้งาน: ${booking.date || "-"}`,
-        `เวลา: ${booking.timeSlot || "-"}`,
+        `à¸à¸£à¸¸à¸“à¸²à¸„à¸·à¸™à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ: ${booking.item || "-"}`,
+        `à¸ˆà¸³à¸™à¸§à¸™: ${booking.quantity || "-"}`,
+        `à¸§à¸±à¸™à¸—à¸µà¹ˆà¹ƒà¸Šà¹‰à¸‡à¸²à¸™: ${booking.date || "-"}`,
+        `à¹€à¸§à¸¥à¸²: ${booking.timeSlot || "-"}`,
       ].join("\n");
       sendBroadcastEmail({ to: [recipient], subject, message }).then((result) => {
         if (!result.ok) {
@@ -343,6 +355,27 @@ const adminActions = () => {
       safeNamedCall("renderResponsibleOptions");
       safeNamedCall("renderEqResponsibleOptions");
       safeNamedCall("renderBroadcastRecipientList");
+      safeNamedCall("renderHomeAboutSection");
+      return;
+    }
+
+    if (target.dataset.deleteStaffPosition !== undefined) {
+      if (!requireCapability("responsible_manage")) return;
+      const position = String(target.dataset.deleteStaffPosition || "").trim();
+      if (!position) return;
+      const list = getResponsibleStaff();
+      if (list.some((item) => String(item.position || "").trim() === position)) {
+        setNotice(
+          byId("responsibleNotice"),
+          getLang() === "th" ? "ไม่สามารถลบหมวดหมู่ที่มีบุคลากรใช้งานอยู่" : "Cannot delete a position that is already in use.",
+          "error"
+        );
+        return;
+      }
+      save(storageKeys.staffPositions, getStaffPositions().filter((item) => item !== position));
+      safeNamedCall("renderResponsiblePositionOptions");
+      safeNamedCall("renderResponsiblePositionList");
+      safeNamedCall("renderHomeAboutSection");
       return;
     }
 
@@ -412,6 +445,7 @@ const bootstrapApp = async () => {
   seedDemoUser();
   seedHomeInfo();
   seedResponsibleStaff();
+  seedStaffPositions();
   seedEquipmentItems();
   seedEquipmentTypes();
   migrateLegacyData();
@@ -424,6 +458,8 @@ const bootstrapApp = async () => {
     safeNamedCall("renderAnnouncements");
     safeNamedCall("renderLabProjects");
     safeNamedCall("renderHomeBottomInfo");
+    safeNamedCall("setupHomeAboutSection");
+    safeNamedCall("renderHomeAboutSection");
     safeNamedCall("renderDashboard");
     safeCall(setupHomeBottomEditor);
   }
@@ -530,6 +566,7 @@ const bootstrapApp = async () => {
   safeNamedCall("renderAnnouncements");
   safeNamedCall("renderLabProjects");
   safeNamedCall("renderHomeBottomInfo");
+  safeNamedCall("renderHomeAboutSection");
   safeNamedCall("renderProfilePage");
   safeNamedCall("renderRoomSlots");
   safeNamedCall("renderRoomApproval");
@@ -545,6 +582,8 @@ const bootstrapApp = async () => {
   safeNamedCall("renderBroadcastRecipientList");
   safeNamedCall("renderAdminAnnouncements");
   safeNamedCall("renderResponsibleAdminList");
+  safeNamedCall("renderResponsiblePositionOptions");
+  safeNamedCall("renderResponsiblePositionList");
   safeNamedCall("renderAdminRoomClosures");
 };
 

@@ -15,6 +15,7 @@ const approvalsPath = path.join(dataDir, 'booking-approvals.json');
 const equipmentReturnsPath = path.join(dataDir, 'equipment-returns.json');
 const sharedStatePath = path.join(dataDir, 'shared-state.json');
 const sharedStateBackupPath = path.join(dataDir, 'shared-state.backup.json');
+const uploadsDir = path.join(dataDir, 'uploads');
 const nextWorkDir = path.join(dataDir, 'next-work');
 const traceFallbackDir = path.join(nextWorkDir, 'runtime-trace');
 const sharedStateKeys = new Set([
@@ -40,6 +41,16 @@ const DB_KEYS = {
   equipmentReturns: 'equipment_returns',
   sharedState: 'shared_state',
 };
+const uploadCategories = new Set([
+  'announcements',
+  'projects',
+  'staff',
+  'equipment',
+  'profiles',
+  'room-zones',
+  'room-maps',
+  'proofs',
+]);
 
 const getDbPool = () => dbPool;
 
@@ -72,6 +83,47 @@ const initDb = async () => {
 };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const ensureDir = (dirPath) => {
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+};
+
+const sanitizeUploadCategory = (value) => {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return uploadCategories.has(normalized) ? normalized : 'misc';
+};
+
+const sanitizeFileNameBase = (value, fallback = 'image') => {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return normalized || fallback;
+};
+
+const parseDataUrlImage = (dataUrl) => {
+  const match = String(dataUrl || '').match(/^data:(image\/(?:png|jpeg|jpg|webp|gif));base64,([a-z0-9+/=\s]+)$/i);
+  if (!match) return null;
+  const mime = String(match[1] || '').toLowerCase();
+  const base64 = String(match[2] || '').replace(/\s+/g, '');
+  const extMap = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+  };
+  const ext = extMap[mime];
+  if (!ext) return null;
+  const buffer = Buffer.from(base64, 'base64');
+  if (!buffer.length || buffer.length > 8 * 1024 * 1024) return null;
+  return { mime, ext, buffer };
+};
 
 const initDbWithRetry = async (attempts = 20, delayMs = 1500) => {
   let lastErr = null;
@@ -206,6 +258,32 @@ app.use('/api', (req, res, next) => {
     return res.status(429).json({ ok: false, message: 'too_many_requests' });
   }
   return next();
+});
+
+app.post('/api/upload-image', (req, res) => {
+  try {
+    const category = sanitizeUploadCategory(req.body?.category);
+    const filenameBase = sanitizeFileNameBase(req.body?.filenameBase, category);
+    const parsed = parseDataUrlImage(req.body?.dataUrl);
+    if (!parsed) {
+      return res.status(400).json({ ok: false, message: 'invalid_image_data' });
+    }
+    const dir = path.join(uploadsDir, category);
+    ensureDir(dir);
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const token = crypto.randomBytes(6).toString('hex');
+    const fileName = `${filenameBase}-${stamp}-${token}.${parsed.ext}`;
+    const fullPath = path.join(dir, fileName);
+    fs.writeFileSync(fullPath, parsed.buffer);
+    return res.json({
+      ok: true,
+      path: `/uploads/${category}/${fileName}`,
+      size: parsed.buffer.length,
+      mime: parsed.mime,
+    });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: error?.message || 'upload_failed' });
+  }
 });
 
 const tempMailDomains = new Set([
@@ -1178,6 +1256,7 @@ app.get('/api/mail-status', (_req, res) => {
 
 const dev = process.env.NODE_ENV !== 'production';
 if (!fs.existsSync(nextWorkDir)) fs.mkdirSync(nextWorkDir, { recursive: true });
+ensureDir(uploadsDir);
 
 const startServer = async () => {
   if (dbEnabled) {
@@ -1226,6 +1305,13 @@ const startServer = async () => {
     },
   }));
   app.use('/image', express.static(path.join(__dirname, 'image')));
+  app.use('/uploads', express.static(uploadsDir, {
+    etag: false,
+    lastModified: true,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    },
+  }));
 
   app.get('/*.html', (req, res) => {
     const file = String(req.path || '').replace(/^\//, '').toLowerCase();

@@ -2,7 +2,9 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$File,
   [string]$EnvFile = ".env",
-  [string]$ContainerName = "weblab-mysql"
+  [string]$ContainerName = "weblab-mysql",
+  [string]$UploadsArchive = "",
+  [string]$UploadsDir = "data/uploads"
 )
 
 Set-StrictMode -Version Latest
@@ -42,4 +44,18 @@ $dbName = if ($envMap.ContainsKey("DB_NAME")) { $envMap["DB_NAME"] } else { "web
 Write-Host "Restoring DB from $File ..."
 $cmd = "docker exec -i $ContainerName sh -lc `"mysql -u$dbUser -p$dbPass $dbName`" < `"$File`""
 cmd /c $cmd
+if (-not $UploadsArchive) {
+  $name = [System.IO.Path]::GetFileName($File)
+  if ($name -match '^mysql_[^_]+_(\d{8}_\d{6})\.sql(\.gz)?$') {
+    $stamp = $Matches[1]
+    $guess = Join-Path ([System.IO.Path]::GetDirectoryName((Resolve-Path $File))) "uploads_$stamp.zip"
+    if (Test-Path $guess) { $UploadsArchive = $guess }
+  }
+}
+if ($UploadsArchive -and (Test-Path $UploadsArchive)) {
+  Write-Host "Restoring uploads from $UploadsArchive ..."
+  if (Test-Path $UploadsDir) { Remove-Item $UploadsDir -Recurse -Force }
+  New-Item -ItemType Directory -Path $UploadsDir -Force | Out-Null
+  Expand-Archive -Path $UploadsArchive -DestinationPath $UploadsDir -Force
+}
 Write-Host "Restore complete."

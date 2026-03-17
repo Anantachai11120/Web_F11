@@ -9,6 +9,7 @@ BACKUP_DIR="${BACKUP_DIR:-backups}"
 SERVICE_NAME="${SERVICE_NAME:-mysql}"
 OUTPUT_GZIP="${OUTPUT_GZIP:-true}"
 KEEP_DAYS="${KEEP_DAYS:-30}"
+UPLOADS_DIR="${UPLOADS_DIR:-data/uploads}"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is not installed." >&2
@@ -48,6 +49,7 @@ fi
 mkdir -p "$BACKUP_DIR"
 stamp="$(date +%Y%m%d_%H%M%S)"
 out="$BACKUP_DIR/mysql_${db_name}_${stamp}.sql"
+uploads_out="$BACKUP_DIR/uploads_${stamp}.tar.gz"
 
 echo "Creating backup: $out"
 "${DOCKER_COMPOSE[@]}" exec -T "$SERVICE_NAME" sh -lc "mysqldump -u${db_user} -p${db_pass} --single-transaction --quick --no-tablespaces ${db_name}" > "$out"
@@ -55,5 +57,10 @@ if [[ "$OUTPUT_GZIP" == "true" ]]; then
   gzip -f "$out"
   out="${out}.gz"
 fi
+if [[ -d "$UPLOADS_DIR" ]]; then
+  echo "Creating uploads backup: $uploads_out"
+  tar -czf "$uploads_out" -C "$(dirname "$UPLOADS_DIR")" "$(basename "$UPLOADS_DIR")"
+fi
 find "$BACKUP_DIR" -type f -name "mysql_${db_name}_*.sql*" -mtime +"$KEEP_DAYS" -delete
+find "$BACKUP_DIR" -type f -name "uploads_*.tar.gz" -mtime +"$KEEP_DAYS" -delete
 echo "Backup complete: $out"

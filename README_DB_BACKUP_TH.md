@@ -33,8 +33,9 @@ bash ./scripts/backup-db.sh
 
 1. dump ฐานข้อมูลจาก service `mysql`
 2. บีบอัดเป็น `.sql.gz`
-3. เก็บไว้ในโฟลเดอร์ `backups/`
-4. ลบไฟล์ backup ที่เก่ากว่า 30 วันอัตโนมัติ
+3. สำรองโฟลเดอร์รูปจริง `data/uploads/` เป็น `uploads_YYYYMMDD_HHMMSS.tar.gz`
+4. เก็บไว้ในโฟลเดอร์ `backups/`
+5. ลบไฟล์ backup ที่เก่ากว่า 30 วันอัตโนมัติ
 
 ปรับค่าได้:
 
@@ -53,6 +54,8 @@ bash ./scripts/restore-db.sh ./backups/mysql_weblab_f11_YYYYMMDD_HHMMSS.sql.gz
 ```bash
 bash ./scripts/restore-db.sh ./backups/mysql_weblab_f11_YYYYMMDD_HHMMSS.sql
 ```
+
+ถ้ามีไฟล์ `uploads_YYYYMMDD_HHMMSS.tar.gz` คู่กันในโฟลเดอร์เดียวกัน script จะกู้รูปกลับให้อัตโนมัติ
 
 ## อัปเดตเว็บแบบข้อมูลไม่หาย
 

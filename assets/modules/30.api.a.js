@@ -357,7 +357,19 @@ const requestEquipmentReturn = async (bookingId, options = {}) => {
     if (!silent) alert(t("equipmentReturnProofRequired"));
     return { ok: false, reason: "proof_required" };
   }
-  item.returnProofImage = proofImage;
+  let storedProofImage = proofImage;
+  try {
+    storedProofImage = await persistImageSource(proofImage, {
+      category: "proofs",
+      filenameBase: item.bookingId || "return-proof",
+      maxSize: 1600,
+      quality: 0.88,
+    });
+  } catch {
+    if (!silent) alert(t("equipmentReturnFailed"));
+    return { ok: false, reason: "proof_upload_failed" };
+  }
+  item.returnProofImage = storedProofImage;
   item.returnProofAt = new Date().toISOString();
   item.returnBatchId = item.returnBatchId || `eqret-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const result = await sendEquipmentReturnEmail(responsible, item);
@@ -401,8 +413,20 @@ const requestMultipleEquipmentReturns = async (bookingIds, options = {}) => {
     alert(t("equipmentReturnProofRequired"));
     return;
   }
+  let storedProofImage = proofImage;
+  try {
+    storedProofImage = await persistImageSource(proofImage, {
+      category: "proofs",
+      filenameBase: batchId || "return-proof",
+      maxSize: 1600,
+      quality: 0.88,
+    });
+  } catch {
+    alert(t("equipmentReturnFailed"));
+    return;
+  }
   borrowedOnly.forEach((b) => {
-    b.returnProofImage = proofImage;
+    b.returnProofImage = storedProofImage;
     b.returnProofAt = new Date().toISOString();
     b.returnBatchId = batchId;
   });
@@ -521,10 +545,21 @@ const registerForm = () => {
     let profileImage = "";
     if (profileFile) {
       try {
-        profileImage = await optimizeImageFileToDataUrl(profileFile, 420, 0.78);
+        const profileDataUrl = await optimizeImageFileToDataUrl(profileFile, 420, 0.78);
+        profileImage = await persistImageSource(profileDataUrl, {
+          category: "profiles",
+          filenameBase: username || email || "profile",
+          maxSize: 720,
+          quality: 0.86,
+        });
       } catch {
         try {
-          profileImage = await fileToDataUrl(profileFile);
+          profileImage = await persistImageSource(profileFile, {
+            category: "profiles",
+            filenameBase: username || email || "profile",
+            maxSize: 720,
+            quality: 0.86,
+          });
         } catch {
           profileImage = "";
         }

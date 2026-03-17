@@ -1,4 +1,4 @@
-const originalTextNodes = new WeakMap();
+﻿const originalTextNodes = new WeakMap();
 
 const byId = (id) => document.getElementById(id);
 
@@ -58,14 +58,18 @@ const defaultResponsibleStaff = [
     name: "อ.ผู้ดูแล Lab-F11",
     email: "labf11@univ.ac.th",
     image: "image/IconLab.png",
+    position: "อาจารย์",
   },
   {
     id: "staff-2",
     name: "เจ้าหน้าที่ห้องปฏิบัติการ",
     email: "labstaff@univ.ac.th",
     image: "image/IconLab.png",
+    position: "ผู้ช่วยสอน",
   },
 ];
+
+const defaultStaffPositions = ["อาจารย์", "นักวิจัย", "ผู้ช่วยสอน"];
 
 const defaultEquipmentItems = [
   { id: "eq-1", name: "Microscope", image: "image/IconLab.png", stock: 3, type: "งานวิทยาศาสตร์" },
@@ -86,6 +90,7 @@ const sharedStorageKeys = new Set([
   storageKeys.labProjects,
   storageKeys.homeInfo,
   storageKeys.responsibleStaff,
+  storageKeys.staffPositions,
   storageKeys.roomClosures,
   storageKeys.roomZoneMap,
   storageKeys.notifications,
@@ -359,6 +364,42 @@ const optimizeImageFileToDataUrl = (file, maxSize = 520, quality = 0.82) =>
     reader.onerror = () => reject(new Error("read_failed"));
     reader.readAsDataURL(file);
   });
+
+const uploadImageDataUrl = async (dataUrl, category = "misc", filenameBase = "image") => {
+  const value = String(dataUrl || "").trim();
+  if (!value) return "";
+  if (!value.startsWith("data:image/")) return value;
+  const res = await fetch("/api/upload-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      dataUrl: value,
+      category: String(category || "misc").trim().toLowerCase(),
+      filenameBase: String(filenameBase || "image").trim().toLowerCase(),
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || !body?.ok || !body?.path) {
+    throw new Error(body?.message || "upload_failed");
+  }
+  return String(body.path);
+};
+
+const persistImageSource = async (source, options = {}) => {
+  const category = options.category || "misc";
+  const filenameBase = options.filenameBase || "image";
+  const maxSize = Number(options.maxSize || 1280);
+  const quality = Number(options.quality || 0.88);
+  if (!source) return "";
+  if (source instanceof File) {
+    const dataUrl = await optimizeImageFileToDataUrl(source, maxSize, quality);
+    return uploadImageDataUrl(dataUrl, category, filenameBase);
+  }
+  const value = String(source || "").trim();
+  if (!value) return "";
+  if (!value.startsWith("data:image/")) return value;
+  return uploadImageDataUrl(value, category, filenameBase);
+};
 
 const getLang = () => {
   const lang = localStorage.getItem(storageKeys.lang);
@@ -814,13 +855,17 @@ const renderProfileMiniMenu = () => {
       </div>
     `;
     nav.appendChild(shell);
-    const trigger = shell.querySelector(".nav-profile-trigger");
-    trigger?.addEventListener("click", (event) => {
+  }
+
+  if (!shell.dataset.bound) {
+    shell.dataset.bound = "1";
+    const triggerEl = shell.querySelector(".nav-profile-trigger");
+    triggerEl?.addEventListener("click", (event) => {
       event.preventDefault();
       const willOpen = !shell.classList.contains("open");
       closeProfileMiniMenu();
       shell.classList.toggle("open", willOpen);
-      trigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      triggerEl.setAttribute("aria-expanded", willOpen ? "true" : "false");
     });
     shell.addEventListener("click", (event) => {
       const target = event.target;
@@ -829,8 +874,8 @@ const renderProfileMiniMenu = () => {
       if (!(actionEl instanceof HTMLElement)) return;
       const action = String(actionEl.dataset.profileMenu || "");
       closeProfileMiniMenu();
-      const triggerEl = shell.querySelector(".nav-profile-trigger");
-      triggerEl?.setAttribute("aria-expanded", "false");
+      const nextTrigger = shell.querySelector(".nav-profile-trigger");
+      nextTrigger?.setAttribute("aria-expanded", "false");
       if (action === "profile") {
         location.href = "profile.html";
         return;
@@ -999,6 +1044,7 @@ const adminCapabilityMatrix = {
   teacher: new Set([
     "announcement_manage",
     "room_approval_manage",
+    "room_closure_manage",
     "responsible_manage",
     "equipment_summary_manage",
     "data_export_manage",
@@ -1135,4 +1181,5 @@ const setupClientHardening = () => {
     if (block) e.preventDefault();
   });
 };
+
 

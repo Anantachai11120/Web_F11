@@ -1,7 +1,145 @@
-const equipmentReturnStatusLabel = (status) => {
+﻿const equipmentReturnStatusLabel = (status) => {
   if (status === "returned") return t("equipmentReturnStatusReturned");
   if (status === "return_requested") return t("equipmentReturnStatusRequested");
   return t("equipmentReturnStatusBorrowed");
+};
+
+const responsibleCropState = {
+  image: null,
+  zoom: 1,
+  offsetX: 0,
+  offsetY: 0,
+  croppedDataUrl: "",
+};
+
+const responsibleUi = (key) => {
+  const dict = getLang() === "th"
+    ? {
+        cropEmpty: "ยังไม่ได้เลือกรูปบุคลากร",
+        cropPending: "เลือกรูปแล้ว ปรับกรอบและกดครอปได้",
+        cropReady: "ครอปรูปบุคลากรแล้ว",
+        imageRequired: "กรุณาใส่รูปบุคลากรอย่างน้อย 1 แบบ",
+        positionRequired: "กรุณาเลือกตำแหน่งบุคลากร",
+        positionAdded: "เพิ่มหมวดหมู่ตำแหน่งแล้ว",
+        positionExists: "หมวดหมู่นี้มีอยู่แล้ว",
+        positionDeleteBlocked: "ไม่สามารถลบหมวดหมู่ที่มีบุคลากรใช้งานอยู่",
+      }
+    : {
+        cropEmpty: "No staff image selected.",
+        cropPending: "Image loaded. Adjust and crop it.",
+        cropReady: "Staff image cropped.",
+        imageRequired: "Please provide a staff image.",
+        positionRequired: "Please choose a position.",
+        positionAdded: "Position category added.",
+        positionExists: "This position category already exists.",
+        positionDeleteBlocked: "Cannot delete a position that is already in use.",
+      };
+  return dict[key] || key;
+};
+
+const drawResponsibleCropCanvas = () => {
+  const canvas = byId("responsibleCropCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#f5fbfd";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!responsibleCropState.image) {
+    ctx.fillStyle = "#8fa1b2";
+    ctx.font = "14px sans-serif";
+    ctx.fillText("No Image", 12, 24);
+    return;
+  }
+  const img = responsibleCropState.image;
+  const scale = Math.max(canvas.width / img.width, canvas.height / img.height) * responsibleCropState.zoom;
+  const drawW = img.width * scale;
+  const drawH = img.height * scale;
+  const dx = (canvas.width - drawW) / 2 + responsibleCropState.offsetX;
+  const dy = (canvas.height - drawH) / 2 + responsibleCropState.offsetY;
+  ctx.drawImage(img, dx, dy, drawW, drawH);
+};
+
+const createResponsibleCroppedDataUrl = () => {
+  const canvas = byId("responsibleCropCanvas");
+  if (!canvas || !responsibleCropState.image) return "";
+  return canvas.toDataURL("image/jpeg", 0.9);
+};
+
+const setupResponsibleCropTool = () => {
+  const input = byId("responsibleImageFile");
+  const zoom = byId("responsibleCropZoom");
+  const x = byId("responsibleCropX");
+  const y = byId("responsibleCropY");
+  const applyBtn = byId("applyResponsibleCropBtn");
+  const status = byId("responsibleCropStatus");
+  if (!input || !zoom || !x || !y || !applyBtn || !status) return;
+  if (input.dataset.bound === "1") return;
+  input.dataset.bound = "1";
+
+  const setStatus = (msg) => { status.textContent = msg; };
+  const redraw = () => {
+    responsibleCropState.zoom = Number(zoom.value || 1);
+    responsibleCropState.offsetX = Number(x.value || 0);
+    responsibleCropState.offsetY = Number(y.value || 0);
+    drawResponsibleCropCanvas();
+  };
+
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    responsibleCropState.croppedDataUrl = "";
+    if (!file) {
+      responsibleCropState.image = null;
+      drawResponsibleCropCanvas();
+      setStatus(responsibleUi("cropEmpty"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        responsibleCropState.image = img;
+        responsibleCropState.zoom = 1;
+        responsibleCropState.offsetX = 0;
+        responsibleCropState.offsetY = 0;
+        zoom.value = "1";
+        x.value = "0";
+        y.value = "0";
+        drawResponsibleCropCanvas();
+        setStatus(responsibleUi("cropPending"));
+      };
+      img.src = String(reader.result || "");
+    };
+    reader.readAsDataURL(file);
+  });
+
+  [zoom, x, y].forEach((el) => el.addEventListener("input", redraw));
+
+  applyBtn.addEventListener("click", () => {
+    responsibleCropState.croppedDataUrl = createResponsibleCroppedDataUrl();
+    setStatus(responsibleCropState.croppedDataUrl ? responsibleUi("cropReady") : responsibleUi("imageRequired"));
+  });
+
+  drawResponsibleCropCanvas();
+  setStatus(responsibleUi("cropEmpty"));
+};
+
+const renderResponsiblePositionOptions = (selected = "") => {
+  const select = byId("responsiblePosition");
+  if (!select) return;
+  const positions = getStaffPositions();
+  select.innerHTML = positions.map((position) => `<option value="${position}">${position}</option>`).join("");
+  if (selected && positions.includes(selected)) select.value = selected;
+  else if (positions.length) select.value = positions[0];
+};
+
+const renderResponsiblePositionList = () => {
+  const wrap = byId("responsiblePositionList");
+  if (!wrap) return;
+  const positions = getStaffPositions();
+  wrap.innerHTML = positions
+    .map((position) => `<span class="staff-position-chip">${position}<button type="button" data-delete-staff-position="${position}" aria-label="delete ${position}">${t("deleteBtn")}</button></span>`)
+    .join("");
 };
 
 const renderResponsibleAdminList = () => {
@@ -17,6 +155,7 @@ const renderResponsibleAdminList = () => {
               <img src="${s.image || "image/IconLab.png"}" alt="${s.name}" />
               <div>
                 <p><strong>${s.name}</strong></p>
+                <p class="muted">${s.position || "-"}</p>
                 <p class="muted">${s.email}</p>
               </div>
             </div>
@@ -29,51 +168,122 @@ const renderResponsibleAdminList = () => {
 
 const setupResponsibleAdmin = () => {
   const form = byId("responsibleForm");
+  const addPositionBtn = byId("addResponsiblePositionBtn");
+  const positionInput = byId("responsiblePositionName");
   if (!form) return;
-
+  setupResponsibleCropTool();
+  renderResponsiblePositionOptions();
+  renderResponsiblePositionList();
   renderResponsibleAdminList();
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!requireCapability("responsible_manage")) return;
-    const name = byId("responsibleName").value.trim();
-    const email = byId("responsibleEmail").value.trim().toLowerCase();
-    const imageUrl = byId("responsibleImageUrl").value.trim();
-    const file = byId("responsibleImageFile")?.files?.[0];
-    const notice = byId("responsibleNotice");
-    if (!name || !email) {
-      setNotice(notice, t("fillAll"), "error");
-      return;
-    }
-    if (!imageUrl && !file) {
-      setNotice(notice, t("responsibleImageRequired"), "error");
-      return;
-    }
-    let image = imageUrl || "image/IconLab.png";
-    if (file) {
-      try {
-        image = await fileToDataUrl(file);
-      } catch {
-        image = imageUrl || "image/IconLab.png";
+  if (addPositionBtn && !addPositionBtn.dataset.bound) {
+    addPositionBtn.dataset.bound = "1";
+    addPositionBtn.addEventListener("click", () => {
+      if (!requireCapability("responsible_manage")) return;
+      const notice = byId("responsibleNotice");
+      const value = String(positionInput?.value || "").trim();
+      if (!value) return;
+      const positions = getStaffPositions();
+      if (positions.includes(value)) {
+        setNotice(notice, responsibleUi("positionExists"), "error");
+        return;
       }
-    }
-
-    const list = getResponsibleStaff();
-    list.push({
-      id: `staff-${Date.now()}`,
-      name,
-      email,
-      image,
+      save(storageKeys.staffPositions, [...positions, value]);
+      if (positionInput) positionInput.value = "";
+      renderResponsiblePositionOptions(value);
+      renderResponsiblePositionList();
+      renderHomeAboutSection();
+      setNotice(notice, responsibleUi("positionAdded"));
     });
-    save(storageKeys.responsibleStaff, list);
-    setNotice(notice, t("responsibleSaved"));
-    form.reset();
-    renderResponsibleAdminList();
-    renderResponsibleOptions();
-    renderEqResponsibleOptions();
-    renderBroadcastRecipientList();
-  });
+  }
+
+  if (!form.dataset.bound) {
+    form.dataset.bound = "1";
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!requireCapability("responsible_manage")) return;
+      const name = byId("responsibleName").value.trim();
+      const position = String(byId("responsiblePosition")?.value || "").trim();
+      const email = byId("responsibleEmail").value.trim().toLowerCase();
+      const imageUrl = byId("responsibleImageUrl").value.trim();
+      const file = byId("responsibleImageFile")?.files?.[0];
+      const notice = byId("responsibleNotice");
+      if (!name || !email) {
+        setNotice(notice, t("fillAll"), "error");
+        return;
+      }
+      if (!position) {
+        setNotice(notice, responsibleUi("positionRequired"), "error");
+        return;
+      }
+      if (!imageUrl && !file && !responsibleCropState.croppedDataUrl) {
+        setNotice(notice, responsibleUi("imageRequired"), "error");
+        return;
+      }
+      let image = responsibleCropState.croppedDataUrl || imageUrl || "image/IconLab.png";
+      if (!responsibleCropState.croppedDataUrl && file) {
+        try {
+          image = await persistImageSource(file, {
+            category: "staff",
+            filenameBase: name || "staff",
+            maxSize: 1200,
+            quality: 0.9,
+          });
+        } catch {
+          image = imageUrl || "image/IconLab.png";
+        }
+      } else if (responsibleCropState.croppedDataUrl) {
+        try {
+          image = await persistImageSource(responsibleCropState.croppedDataUrl, {
+            category: "staff",
+            filenameBase: name || "staff",
+            maxSize: 1200,
+            quality: 0.9,
+          });
+        } catch {
+          image = imageUrl || "image/IconLab.png";
+        }
+      }
+
+      const list = getResponsibleStaff();
+      list.push({
+        id: `staff-${Date.now()}`,
+        name,
+        position,
+        email,
+        image,
+      });
+      save(storageKeys.responsibleStaff, list);
+      setNotice(notice, t("responsibleSaved"));
+      form.reset();
+      responsibleCropState.image = null;
+      responsibleCropState.croppedDataUrl = "";
+      const zoom = byId("responsibleCropZoom");
+      const x = byId("responsibleCropX");
+      const y = byId("responsibleCropY");
+      if (zoom) zoom.value = "1";
+      if (x) x.value = "0";
+      if (y) y.value = "0";
+      drawResponsibleCropCanvas();
+      const cropStatus = byId("responsibleCropStatus");
+      if (cropStatus) cropStatus.textContent = responsibleUi("cropEmpty");
+      renderResponsiblePositionOptions();
+      renderResponsiblePositionList();
+      renderResponsibleAdminList();
+      renderResponsibleOptions();
+      renderEqResponsibleOptions();
+      renderBroadcastRecipientList();
+      renderHomeAboutSection();
+    });
+  }
 };
+
+Object.assign(globalThis, {
+  renderResponsibleAdminList,
+  renderResponsiblePositionOptions,
+  renderResponsiblePositionList,
+  setupResponsibleAdmin,
+});
 
 const equipmentCropState = {
   image: null,
@@ -225,7 +435,6 @@ const renderEquipmentAdminList = () => {
         .join("")
     : `<p class="muted">ยังไม่มีรายการอุปกรณ์</p>`;
 };
-
 const setupEquipmentAdminTools = () => {
   const tools = byId("equipmentAdminTools");
   const form = byId("equipmentAdminForm");
@@ -282,13 +491,12 @@ const setupEquipmentAdminTools = () => {
     if (newTypeInput) newTypeInput.value = "";
   });
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!requireAdminAction()) return;
     const notice = byId("equipmentAdminNotice");
     const name = byId("eqAdminName")?.value?.trim() || "";
     const nameEn = byId("eqAdminNameEn")?.value?.trim() || "";
-    const stock = Math.max(1, Number(byId("eqAdminStock")?.value || 1));
     const type = byId("eqAdminType")?.value?.trim() || "ทั่วไป";
     const usageGuide = byId("eqAdminUsage")?.value?.trim() || "";
     if (!name) {
@@ -297,10 +505,23 @@ const setupEquipmentAdminTools = () => {
     }
     const list = normalizeEquipmentItems();
     const existing = editingEquipmentId ? list.find((i) => i.id === editingEquipmentId) : null;
-    const image = equipmentCropState.croppedDataUrl || existing?.image || "";
+    let image = equipmentCropState.croppedDataUrl || existing?.image || "";
     if (!image) {
       setNotice(notice, t("equipmentAdminImageRequired"), "error");
       return;
+    }
+    if (equipmentCropState.croppedDataUrl) {
+      try {
+        image = await persistImageSource(equipmentCropState.croppedDataUrl, {
+          category: "equipment",
+          filenameBase: name || "equipment",
+          maxSize: 1400,
+          quality: 0.9,
+        });
+      } catch {
+        setNotice(notice, t("equipmentAdminImageRequired"), "error");
+        return;
+      }
     }
     if (editingEquipmentId) {
       const index = list.findIndex((i) => i.id === editingEquipmentId);
@@ -345,7 +566,6 @@ const setupEquipmentAdminTools = () => {
       byId("eqAdminName").value = item.name || "";
       if (byId("eqAdminNameEn")) byId("eqAdminNameEn").value = item.nameEn || "";
       byId("eqAdminStock").value = String(item.stock || 1);
-      if (byId("eqAdminUsage")) byId("eqAdminUsage").value = item.usageGuide || "";
       renderEquipmentTypeOptions(item.type || "ทั่วไป");
       equipmentCropState.croppedDataUrl = item.image || "";
       const img = new Image();
@@ -375,5 +595,6 @@ const setupEquipmentAdminTools = () => {
     }
   });
 };
+
 
 

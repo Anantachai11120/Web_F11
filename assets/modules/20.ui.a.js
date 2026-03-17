@@ -106,7 +106,7 @@ const setupAnnouncementEditor = () => {
     }
   });
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const typeValue = byId("announcementEditorType")?.value || "announcement";
     const titleValue = byId("announcementEditorTitleInput")?.value?.trim() || "";
@@ -117,12 +117,13 @@ const setupAnnouncementEditor = () => {
       return;
     }
     if (typeof announcementEditorSaveHandler === "function") {
-      announcementEditorSaveHandler({
+      const result = await announcementEditorSaveHandler({
         type: normalizeAnnouncementType(typeValue),
         title: titleValue,
         content: contentValue,
         image: imageValue,
       });
+      if (result === false) return;
     }
     closeAnnouncementEditor();
   });
@@ -243,13 +244,26 @@ const renderAnnouncements = () => {
           openAnnouncementEditor({
             mode: "edit",
             announcement: current,
-            onSave: (payload) => {
+            onSave: async (payload) => {
+              let image = payload.image || "";
+              if (image.startsWith("data:image/")) {
+                try {
+                  image = await persistImageSource(image, {
+                    category: "announcements",
+                    filenameBase: payload.title || current.title || "announcement",
+                    maxSize: 1600,
+                    quality: 0.9,
+                  });
+                } catch {
+                  return false;
+                }
+              }
               list[index] = {
                 ...current,
                 title: payload.title || current.title || "",
                 content: payload.content || current.content || "",
                 type: payload.type || current.type || "announcement",
-                image: payload.image || "",
+                image,
                 updatedAt: new Date().toISOString(),
               };
               save(storageKeys.announcements, list);
@@ -299,15 +313,28 @@ const renderAnnouncements = () => {
         if (!isAdminSession()) return;
         openAnnouncementEditor({
           mode: "create",
-          onSave: (payload) => {
+          onSave: async (payload) => {
             const session = getSession();
             const list = load(storageKeys.announcements, []);
+            let image = payload.image || "";
+            if (image.startsWith("data:image/")) {
+              try {
+                image = await persistImageSource(image, {
+                  category: "announcements",
+                  filenameBase: payload.title || "announcement",
+                  maxSize: 1600,
+                  quality: 0.9,
+                });
+              } catch {
+                return false;
+              }
+            }
             list.push({
               id: `ann-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
               type: payload.type || "announcement",
               title: payload.title,
               content: payload.content,
-              image: payload.image || "",
+              image,
               createdAt: new Date().toISOString(),
               author: session?.username || "admin",
             });
