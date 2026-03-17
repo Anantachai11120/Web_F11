@@ -548,7 +548,6 @@ const renderAdminUserProfilePanel = () => {
                 .map(
                   (r) => {
                     const responsible = staffMap.get(String(r.responsibleId || ""));
-                    const bookingEnded = isBookingPastEndTime(r);
                     const isPending = (r.status || "pending") === "pending";
                     const bookingKey = [
                       r.createdAt || "",
@@ -556,7 +555,7 @@ const renderAdminUserProfilePanel = () => {
                       r.date || "",
                       r.timeSlot || "",
                     ].join("__");
-                    const canReview = hasAdminCapability("room_approval_manage") && isPending && !bookingEnded;
+                    const canReview = hasAdminCapability("room_approval_manage") && isPending;
                     return `<div class="feed-item">
                     <p class="feed-meta">${new Date(r.createdAt).toLocaleString(localeByLang())}</p>
                     <p><strong>${r.room || "Lab-F11"}</strong> | ${r.date || "-"} | ${r.timeSlot || "-"}</p>

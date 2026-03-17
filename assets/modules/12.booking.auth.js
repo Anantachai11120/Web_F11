@@ -24,6 +24,7 @@ const updateBookingAuthUI = () => {
     if (roomHint) roomHint.textContent = loggedIn ? "" : t("loginRequiredToBook");
     setupRoomRulesPopup();
     if (typeof setupRoomSectionTabs === "function") setupRoomSectionTabs();
+    if (typeof updateRoomResponsibleRequirement === "function") updateRoomResponsibleRequirement();
   }
   if (eqForm) {
     if (eqCard) eqCard.hidden = !loggedIn;

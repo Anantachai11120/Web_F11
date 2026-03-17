@@ -94,6 +94,17 @@ const renderResponsibleOptions = () => {
     : `<p class="muted">${staffUi("noResponsibleOptions")}</p>`;
 };
 
+const updateRoomResponsibleRequirement = () => {
+  const hidden = byId("selectedResponsibleId");
+  const form = byId("roomBookingForm");
+  if (!form) return;
+  const submit = form.querySelector('button[type="submit"]');
+  if (!submit) return;
+  const loggedIn = Boolean(getCurrentUser());
+  const hasResponsible = Boolean(String(hidden?.value || "").trim());
+  submit.disabled = !loggedIn || !hasResponsible;
+};
+
 const renderHomeAboutSection = () => {
   const section = byId("labAboutSection");
   const filter = byId("labAboutPositionFilter");
@@ -226,15 +237,14 @@ const setupResponsibleSelector = () => {
   if (!box || !hidden) return;
   if (box.dataset.bound === "1") {
     renderResponsibleOptions();
+    updateRoomResponsibleRequirement();
     if (typeof renderEqResponsibleOptions === "function") renderEqResponsibleOptions();
     return;
   }
 
-  if (!hidden.value) {
-    const first = getResponsibleStaff()[0];
-    hidden.value = first?.id || "";
-  }
+  hidden.value = String(hidden.value || "").trim();
   renderResponsibleOptions();
+  updateRoomResponsibleRequirement();
   if (typeof renderEqResponsibleOptions === "function") renderEqResponsibleOptions();
 
   box.dataset.bound = "1";
@@ -245,6 +255,7 @@ const setupResponsibleSelector = () => {
     if (!(card instanceof HTMLElement)) return;
     hidden.value = card.dataset.responsibleId || "";
     renderResponsibleOptions();
+    updateRoomResponsibleRequirement();
     if (typeof renderEqResponsibleOptions === "function") renderEqResponsibleOptions();
   });
 };
@@ -254,6 +265,7 @@ Object.assign(globalThis, {
   getResponsibleStaff,
   getStaffPositions,
   renderResponsibleOptions,
+  updateRoomResponsibleRequirement,
   setupResponsibleSelector,
   renderHomeAboutSection,
   setupHomeAboutSection,
