@@ -1,12 +1,24 @@
 const normalizeRoomClosure = (entry) => {
   const raw = entry && typeof entry === "object" ? entry : {};
   const mode = String(raw.mode || "").trim() === "slot" ? "slot" : "day";
+  const repeat = String(raw.repeat || "").trim() === "weekly" ? "weekly" : "once";
+  const zoneIds = Array.isArray(raw.zoneIds)
+    ? [...new Set(raw.zoneIds.map((value) => String(value || "").trim()).filter(Boolean))]
+    : [];
+  const weekday =
+    Number.isInteger(Number(raw.weekday)) && Number(raw.weekday) >= 0 && Number(raw.weekday) <= 6
+      ? Number(raw.weekday)
+      : new Date(String(raw.date || "").trim() || Date.now()).getDay();
   return {
     id: String(raw.id || `rc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
     room: String(raw.room || "Lab-F11"),
     date: String(raw.date || "").trim(),
     mode,
     timeSlot: mode === "slot" ? String(raw.timeSlot || "").trim() : "",
+    repeat,
+    weekday,
+    untilDate: repeat === "weekly" ? String(raw.untilDate || "").trim() : "",
+    zoneIds,
     reason: String(raw.reason || "").trim(),
     createdAt: String(raw.createdAt || new Date().toISOString()),
     createdBy: String(raw.createdBy || "-"),
@@ -29,14 +41,34 @@ const getRoomClosures = () => {
   });
 };
 
+const roomClosureAppliesToDate = (item, date) => {
+  const target = String(date || "").trim();
+  if (!target || !item?.date) return false;
+  if (item.repeat !== "weekly") return item.date === target;
+  const start = String(item.date || "").trim();
+  const end = String(item.untilDate || "").trim();
+  if (target < start) return false;
+  if (end && target > end) return false;
+  return new Date(`${target}T00:00:00`).getDay() === Number(item.weekday || 0);
+};
+
+const roomClosureAppliesToZone = (item, zoneId = "") => {
+  const zones = Array.isArray(item?.zoneIds) ? item.zoneIds : [];
+  if (!zones.length) return true;
+  return Boolean(zoneId) && zones.includes(String(zoneId).trim());
+};
+
 const findRoomClosure = (selection) => {
   const room = String(selection?.room || "Lab-F11").trim();
   const date = String(selection?.date || "").trim();
   const timeSlot = String(selection?.timeSlot || "").trim();
+  const roomZone = String(selection?.roomZone || "").trim();
   if (!date) return null;
   const list = getRoomClosures();
   const exact = list.find((item) => {
-    if (item.room !== room || item.date !== date) return false;
+    if (item.room !== room) return false;
+    if (!roomClosureAppliesToDate(item, date)) return false;
+    if (!roomClosureAppliesToZone(item, roomZone)) return false;
     if (item.mode === "day") return true;
     return Boolean(timeSlot) && item.timeSlot === timeSlot;
   });
@@ -45,8 +77,23 @@ const findRoomClosure = (selection) => {
 
 const roomClosureLabel = (item) => {
   if (!item) return "";
-  if (item.mode === "day") return t("adminRoomCloseModeDay");
-  return `${t("adminRoomCloseModeSlot")} (${item.timeSlot || "-"})`;
+  const modeText =
+    item.mode === "day" ? t("adminRoomCloseModeDay") : `${t("adminRoomCloseModeSlot")} (${item.timeSlot || "-"})`;
+  if (item.repeat !== "weekly") return modeText;
+  const weekdayNamesTh = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+  const weekdayNamesEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const weekdayLabel =
+    getLang() === "th"
+      ? `ทุกวัน${weekdayNamesTh[Number(item.weekday || 0)] || "-"}`
+      : `Every ${weekdayNamesEn[Number(item.weekday || 0)] || "-"}`;
+  return `${modeText} | ${weekdayLabel}`;
+};
+
+const roomClosureZoneLabel = (item) => {
+  const zones = Array.isArray(item?.zoneIds) ? item.zoneIds : [];
+  if (!zones.length) return getLang() === "th" ? "ทั้งห้อง" : "Whole room";
+  const zoneMap = new Map((getRoomZoneMapConfig()?.zones || []).map((zone) => [zone.id, zone.label]));
+  return zones.map((id) => zoneMap.get(id) || id).join(", ");
 };
 
 const renderAdminRoomClosures = () => {
@@ -59,7 +106,7 @@ const renderAdminRoomClosures = () => {
           (item) => `<div class="admin-item">
             <div>
               <p><strong>${item.room}</strong> · ${item.date}</p>
-              <p class="muted">${roomClosureLabel(item)} ${item.reason ? `| ${item.reason}` : ""}</p>
+              <p class="muted">${roomClosureLabel(item)} | ${roomClosureZoneLabel(item)}${item.untilDate ? ` | ${item.date} - ${item.untilDate}` : ""}${item.reason ? ` | ${item.reason}` : ""}</p>
               <p class="muted">${t("approvedBy")}: ${item.createdBy || "-"} | ${new Date(item.createdAt).toLocaleString(localeByLang())}</p>
             </div>
             <div class="feed-actions-end inline-actions">
@@ -77,24 +124,63 @@ const setupAdminRoomClosureForm = () => {
   const mode = byId("adminRoomCloseMode");
   const timeWrap = byId("adminRoomCloseTimeWrap");
   const time = byId("adminRoomCloseTime");
+  const repeat = byId("adminRoomCloseRepeat");
+  const weekdayWrap = byId("adminRoomCloseWeekdayWrap");
+  const weekday = byId("adminRoomCloseWeekday");
+  const durationWrap = byId("adminRoomCloseDurationWrap");
+  const durationMonths = byId("adminRoomCloseDurationMonths");
   const reasonPreset = byId("adminRoomCloseReasonPreset");
   const reasonInput = byId("adminRoomCloseReason");
+  const zoneList = byId("adminRoomCloseZoneList");
   const notice = byId("adminRoomCloseNotice");
-  if (!form || !mode || !timeWrap) return;
+  if (!form || !mode || !timeWrap || !repeat || !weekdayWrap || !durationWrap || !zoneList) return;
   const canManageClosure = hasAdminCapability("room_closure_manage");
   if (!canManageClosure) {
     form.hidden = true;
   }
 
+  const renderZoneChoices = () => {
+    const zones = getRoomZoneMapConfig()?.zones || [];
+    zoneList.innerHTML = [
+      `<label class="recipient-item"><input type="checkbox" value="" checked /> <span><strong>${getLang() === "th" ? "ทั้งห้อง" : "Whole room"}</strong></span></label>`,
+      ...zones.map(
+        (zone) =>
+          `<label class="recipient-item"><input type="checkbox" value="${zone.id}" /> <span><strong>${zone.label}</strong> (${zone.id})</span></label>`
+      ),
+    ].join("");
+  };
+
   const syncMode = () => {
     const isSlot = mode.value === "slot";
+    const isWeekly = repeat.value === "weekly";
     timeWrap.hidden = !isSlot;
+    weekdayWrap.hidden = !isWeekly;
+    durationWrap.hidden = !isWeekly;
     if (!isSlot && time) time.value = "";
   };
+  const syncZoneSelection = (target) => {
+    const checkboxes = Array.from(zoneList.querySelectorAll('input[type="checkbox"]'));
+    const wholeRoom = checkboxes.find((box) => box.value === "");
+    if (!wholeRoom) return;
+    if (target?.value === "" && target.checked) {
+      checkboxes.forEach((box) => {
+        if (box !== wholeRoom) box.checked = false;
+      });
+      return;
+    }
+    if (target?.value && target.checked) wholeRoom.checked = false;
+    const anyZoneChecked = checkboxes.some((box) => box.value && box.checked);
+    if (!anyZoneChecked && !wholeRoom.checked) wholeRoom.checked = true;
+  };
   syncMode();
+  renderZoneChoices();
   if (!mode.dataset.bound) {
     mode.dataset.bound = "1";
     mode.addEventListener("change", syncMode);
+  }
+  if (!repeat.dataset.bound) {
+    repeat.dataset.bound = "1";
+    repeat.addEventListener("change", syncMode);
   }
   if (reasonPreset && reasonInput && !reasonPreset.dataset.bound) {
     reasonPreset.dataset.bound = "1";
@@ -102,6 +188,14 @@ const setupAdminRoomClosureForm = () => {
       const value = String(reasonPreset.value || "").trim();
       if (!value) return;
       reasonInput.value = value;
+    });
+  }
+  if (!zoneList.dataset.bound) {
+    zoneList.dataset.bound = "1";
+    zoneList.addEventListener("change", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      syncZoneSelection(target);
     });
   }
 
@@ -114,6 +208,12 @@ const setupAdminRoomClosureForm = () => {
       const room = "Lab-F11";
       const closeMode = String(byId("adminRoomCloseMode")?.value || "day");
       const timeSlot = String(byId("adminRoomCloseTime")?.value || "").trim();
+      const repeatMode = String(byId("adminRoomCloseRepeat")?.value || "once");
+      const weekdayValue = Number(byId("adminRoomCloseWeekday")?.value || new Date(`${date}T00:00:00`).getDay());
+      const durationValue = Math.max(1, Number(byId("adminRoomCloseDurationMonths")?.value || 1));
+      const selectedZoneIds = Array.from(zoneList.querySelectorAll('input[type="checkbox"]:checked'))
+        .map((el) => String(el.value || "").trim())
+        .filter(Boolean);
       const reasonText = String(byId("adminRoomCloseReason")?.value || "").trim();
       const reasonQuick = String(byId("adminRoomCloseReasonPreset")?.value || "").trim();
       const reason = reasonText || reasonQuick;
@@ -125,14 +225,27 @@ const setupAdminRoomClosureForm = () => {
         setNotice(notice, t("fillAll"), "error");
         return;
       }
+      const untilDate =
+        repeatMode === "weekly"
+          ? (() => {
+              const end = new Date(`${date}T00:00:00`);
+              end.setMonth(end.getMonth() + durationValue);
+              end.setDate(end.getDate() - 1);
+              return end.toISOString().slice(0, 10);
+            })()
+          : "";
 
       const list = getRoomClosures();
       const duplicated = list.some(
         (item) =>
           item.room === room &&
           item.date === date &&
+          item.repeat === repeatMode &&
+          Number(item.weekday || -1) === (repeatMode === "weekly" ? weekdayValue : Number(item.weekday || -1)) &&
+          String(item.untilDate || "") === untilDate &&
           item.mode === closeMode &&
-          (closeMode === "day" || item.timeSlot === timeSlot)
+          (closeMode === "day" || item.timeSlot === timeSlot) &&
+          JSON.stringify([...(item.zoneIds || [])].sort()) === JSON.stringify([...selectedZoneIds].sort())
       );
       if (duplicated) {
         setNotice(notice, t("adminRoomCloseDuplicate"), "error");
@@ -145,6 +258,10 @@ const setupAdminRoomClosureForm = () => {
           date,
           mode: closeMode,
           timeSlot,
+          repeat: repeatMode,
+          weekday: repeatMode === "weekly" ? weekdayValue : new Date(`${date}T00:00:00`).getDay(),
+          untilDate,
+          zoneIds: selectedZoneIds,
           reason,
           createdBy: getSession()?.username || "admin",
         })
@@ -152,10 +269,12 @@ const setupAdminRoomClosureForm = () => {
       save(storageKeys.roomClosures, list);
       setNotice(notice, t("adminRoomCloseSaved"));
       form.reset();
+      renderZoneChoices();
       syncMode();
       if (reasonPreset) reasonPreset.value = "";
       renderAdminRoomClosures();
       renderRoomSlots();
+      if (typeof renderRoomZoneMaps === "function") renderRoomZoneMaps();
     });
   }
 
@@ -205,15 +324,13 @@ const getBroadcastRecipientsByGroup = (group = "all") => {
   };
 
   if (group === "all" || group === "users") {
-    users
-      .filter((u) => u.role !== "admin")
-      .forEach((u) =>
-        pushUnique({
-          email: u.email || "",
-          name: u.name || u.username || "",
-          kind: "user",
-        })
-      );
+    users.forEach((u) =>
+      pushUnique({
+        email: u.email || "",
+        name: u.name || u.username || "",
+        kind: "user",
+      })
+    );
   }
   if (group === "all" || group === "staff") {
     staff.forEach((s) =>

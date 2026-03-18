@@ -222,6 +222,8 @@ const roomZoneOccupancy = (selection) => {
 };
 
 const roomZoneIsBlocked = (selection, zoneId, excludeBookingId = "") => {
+  const closure = typeof findRoomClosure === "function" ? findRoomClosure({ ...selection, roomZone: zoneId }) : null;
+  if (closure) return true;
   const map = roomZoneOccupancy(selection);
   const list = map[String(zoneId || "").trim()] || [];
   return list.some((booking) => String(booking.bookingId || booking.createdAt || "") !== String(excludeBookingId || ""));
@@ -285,7 +287,7 @@ const openRoomZoneImageModal = (zoneId, selection = null, mode = "status") => {
   if (!zone || !modal || !title || !body) return;
   const activeSelection = selection || roomSelection();
   const occupancy = roomZoneOccupancy(activeSelection);
-  const closed = typeof findRoomClosure === "function" ? findRoomClosure(activeSelection) : null;
+  const closed = typeof findRoomClosure === "function" ? findRoomClosure({ ...activeSelection, roomZone: zone.id }) : null;
   const isBooked = Boolean(closed) || Boolean((occupancy[zone.id] || []).length);
   const src = roomZoneModalImage(zone, isBooked);
   if (!src) return;
@@ -311,7 +313,7 @@ const roomZoneBookingSelectionHtml = (zoneId) => {
     date: byId("roomDate")?.value?.trim() || "",
     timeSlot: byId("roomTime")?.value?.trim() || "",
   };
-  const closed = typeof findRoomClosure === "function" ? findRoomClosure(selection) : null;
+  const closed = typeof findRoomClosure === "function" ? findRoomClosure({ ...selection, roomZone: zone.id }) : null;
   const blocked = roomZoneIsBlocked(selection, zone.id);
   const isBooked = Boolean(closed) || blocked;
   const message = closed
@@ -331,9 +333,9 @@ const roomZoneBookingSelectionHtml = (zoneId) => {
 const buildRoomZoneMapMarkup = ({ mode, selection, selectedZoneId = "", activeZoneId = "" }) => {
   const config = getRoomZoneMapConfig();
   const occupancy = roomZoneOccupancy(selection);
-  const closed = typeof findRoomClosure === "function" ? findRoomClosure(selection) : null;
   const markers = config.zones
     .map((zone) => {
+      const closed = typeof findRoomClosure === "function" ? findRoomClosure({ ...selection, roomZone: zone.id }) : null;
       const booked = Boolean(closed) || Boolean((occupancy[zone.id] || []).length);
       const src = roomZoneMarkerImage(zone, booked);
       return `
@@ -368,7 +370,7 @@ const roomZoneDetailHtml = (zoneId) => {
   const zone = getRoomZoneById(zoneId);
   if (!zone) return roomZoneUi("statusUnknown");
   const selection = roomSelection();
-  const closed = typeof findRoomClosure === "function" ? findRoomClosure(selection) : null;
+  const closed = typeof findRoomClosure === "function" ? findRoomClosure({ ...selection, roomZone: zone.id }) : null;
   if (closed) {
     return `
       ${roomZonePreviewHtml(zone, true)}

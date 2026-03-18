@@ -135,7 +135,7 @@
             <form id="adminRoomCloseForm" class="admin-room-close-form">
               <div class="room-filter-grid">
                 <div class="room-filter-item">
-                  <label for="adminRoomCloseDate" data-i18n="adminRoomCloseDateLabel">วันที่ปิด</label>
+                  <label for="adminRoomCloseDate" data-i18n="adminRoomCloseDateLabel">วันที่เริ่มปิด</label>
                   <input id="adminRoomCloseDate" type="date" />
                 </div>
                 <div class="room-filter-item">
@@ -153,7 +153,38 @@
                     <option>13:00 - 17:00</option>
                   </select>
                 </div>
+                <div class="room-filter-item">
+                  <label for="adminRoomCloseRepeat">ความถี่การปิด</label>
+                  <select id="adminRoomCloseRepeat">
+                    <option value="once">ครั้งเดียว</option>
+                    <option value="weekly">ทุกสัปดาห์</option>
+                  </select>
+                </div>
+                <div class="room-filter-item" id="adminRoomCloseWeekdayWrap" hidden>
+                  <label for="adminRoomCloseWeekday">วันในสัปดาห์</label>
+                  <select id="adminRoomCloseWeekday">
+                    <option value="1">ทุกวันจันทร์</option>
+                    <option value="2">ทุกวันอังคาร</option>
+                    <option value="3">ทุกวันพุธ</option>
+                    <option value="4">ทุกวันพฤหัสบดี</option>
+                    <option value="5">ทุกวันศุกร์</option>
+                    <option value="6">ทุกวันเสาร์</option>
+                    <option value="0">ทุกวันอาทิตย์</option>
+                  </select>
+                </div>
+                <div class="room-filter-item" id="adminRoomCloseDurationWrap" hidden>
+                  <label for="adminRoomCloseDurationMonths">ระยะเวลา</label>
+                  <select id="adminRoomCloseDurationMonths">
+                    <option value="1">1 เดือน</option>
+                    <option value="2">2 เดือน</option>
+                    <option value="3">3 เดือน</option>
+                    <option value="6">6 เดือน</option>
+                    <option value="12">12 เดือน</option>
+                  </select>
+                </div>
               </div>
+              <label>โซนที่ปิดใช้งาน</label>
+              <div id="adminRoomCloseZoneList" class="staff-position-list"></div>
               <label for="adminRoomCloseReason" data-i18n="adminRoomCloseReasonLabel">เหตุผล (ไม่บังคับ)</label>
               <select id="adminRoomCloseReasonPreset">
                 <option value="" data-i18n="adminRoomCloseReasonSelect">เลือกเหตุผล</option>

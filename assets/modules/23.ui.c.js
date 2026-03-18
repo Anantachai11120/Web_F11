@@ -444,6 +444,7 @@ const setupEquipmentAdminTools = () => {
   const typeSelect = byId("eqAdminType");
   const addTypeBtn = byId("eqAddTypeBtn");
   const newTypeInput = byId("eqAdminNewType");
+  const typeList = byId("eqAdminTypeList");
 
   const renderEquipmentTypeOptions = (selectedType = "") => {
     if (!typeSelect) return;
@@ -458,6 +459,17 @@ const setupEquipmentAdminTools = () => {
     }
   };
 
+  const renderEquipmentTypeList = () => {
+    if (!typeList) return;
+    const types = normalizeEquipmentTypes();
+    typeList.innerHTML = types
+      .map(
+        (type) =>
+          `<span class="staff-position-chip">${type}<button type="button" data-delete-equipment-type="${type}" aria-label="delete ${type}">${t("deleteBtn")}</button></span>`
+      )
+      .join("");
+  };
+
   if (!isAdminSession()) {
     tools.hidden = true;
     return;
@@ -466,6 +478,7 @@ const setupEquipmentAdminTools = () => {
   body.hidden = true;
   toggleBtn.textContent = t("toggleShowEdit");
   renderEquipmentTypeOptions();
+  renderEquipmentTypeList();
   renderEquipmentAdminList();
 
   if (!toggleBtn.dataset.bound) {
@@ -488,6 +501,7 @@ const setupEquipmentAdminTools = () => {
         save(storageKeys.equipmentTypes, types);
       }
       renderEquipmentTypeOptions(value);
+      renderEquipmentTypeList();
       renderEquipmentTypeFilterOptions();
       renderEquipmentCatalog();
       if (newTypeInput) newTypeInput.value = "";
@@ -593,7 +607,7 @@ const setupEquipmentAdminTools = () => {
         return;
       }
 
-      if (target.dataset.deleteEquipment !== undefined) {
+    if (target.dataset.deleteEquipment !== undefined) {
         if (!window.confirm(t("confirmDeleteEquipment"))) return;
         const index = Number(target.dataset.deleteEquipment);
         const list = normalizeEquipmentItems();
@@ -602,7 +616,35 @@ const setupEquipmentAdminTools = () => {
         save(storageKeys.equipmentItems, list);
         renderEquipmentAdminList();
         syncEquipmentEligibility();
+        return;
       }
+
+    });
+  }
+
+  if (typeList && typeList.dataset.bound !== "1") {
+    typeList.dataset.bound = "1";
+    typeList.addEventListener("click", (e) => {
+      if (!requireAdminAction()) return;
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.dataset.deleteEquipmentType === undefined) return;
+      const type = String(target.dataset.deleteEquipmentType || "").trim();
+      if (!type) return;
+      const items = normalizeEquipmentItems();
+      if (items.some((item) => String(item.type || "").trim() === type)) {
+        setNotice(
+          byId("equipmentAdminNotice"),
+          getLang() === "th" ? "ไม่สามารถลบชนิดอุปกรณ์ที่กำลังถูกใช้งานอยู่" : "Cannot delete an equipment type that is in use.",
+          "error"
+        );
+        return;
+      }
+      save(storageKeys.equipmentTypes, normalizeEquipmentTypes().filter((item) => item !== type));
+      renderEquipmentTypeOptions();
+      renderEquipmentTypeList();
+      renderEquipmentTypeFilterOptions();
+      renderEquipmentCatalog();
     });
   }
 };

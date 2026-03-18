@@ -792,6 +792,7 @@ const bookingForm = ({ formId, noticeId, key, mapData }) => {
         room: String(data.room || "Lab-F11"),
         date: String(data.date || ""),
         timeSlot: String(data.timeSlot || ""),
+        roomZone: String(data.roomZone || ""),
       });
       if (closure) {
         setNotice(
