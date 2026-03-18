@@ -456,6 +456,7 @@ const adminActions = () => {
 
   safeNamedCall("renderRoomApproval");
   safeNamedCall("renderAdminUsers");
+  safeNamedCall("setupAdminUserSearch");
   safeNamedCall("renderAdminUserProfilePanel");
   safeNamedCall("renderAdminEquipmentBorrowSummary");
   safeNamedCall("renderBroadcastRecipientList");
@@ -500,6 +501,7 @@ const bootstrapApp = async () => {
   updateNavAuthState();
   setFooterYear();
   setupAuthNav();
+  safeCall(setupSessionIdleLogout);
   setupAdminNav();
   document.documentElement.classList.add("i18n-ready");
 
@@ -599,13 +601,15 @@ const bootstrapApp = async () => {
 
   const sharedChangedPromise = deferSharedStorageInit();
 
-  if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html")) {
+  if (isAnyCurrentPage("rooms.html", "profile.html", "admin.html", "equipment.html")) {
     syncApprovalsAndReturns().then(() => {
       safeNamedCall("autoRejectExpiredPendingRoomBookings");
       safeNamedCall("renderDashboard");
       safeNamedCall("renderRoomApproval");
       safeNamedCall("renderRoomSlots");
       safeNamedCall("renderProfilePage");
+      safeNamedCall("renderEquipmentCatalog");
+      safeNamedCall("renderSelectedEquipmentList");
     });
 
     setInterval(() => {
@@ -615,6 +619,8 @@ const bootstrapApp = async () => {
         safeNamedCall("renderRoomApproval");
         safeNamedCall("renderRoomSlots");
         safeNamedCall("renderProfilePage");
+        safeNamedCall("renderEquipmentCatalog");
+        safeNamedCall("renderSelectedEquipmentList");
       });
     }, 30000);
   }

@@ -288,6 +288,7 @@ const askReturnProofViaModal = async () => {
   input.value = "";
   preview.src = "";
   previewWrap.hidden = true;
+  confirmBtn.disabled = true;
   modal.hidden = false;
   document.body.classList.add("no-scroll");
   return new Promise((resolve) => {
@@ -295,6 +296,7 @@ const askReturnProofViaModal = async () => {
     const cleanup = () => {
       modal.hidden = true;
       document.body.classList.remove("no-scroll");
+      confirmBtn.disabled = false;
       input.removeEventListener("change", onChange);
       confirmBtn.removeEventListener("click", onConfirm);
       cancelBtn.removeEventListener("click", onCancel);
@@ -305,16 +307,19 @@ const askReturnProofViaModal = async () => {
         proofImage = "";
         preview.src = "";
         previewWrap.hidden = true;
+        confirmBtn.disabled = true;
         return;
       }
       try {
         proofImage = await fileToDataUrl(file);
         preview.src = proofImage;
         previewWrap.hidden = false;
+        confirmBtn.disabled = false;
       } catch {
         proofImage = "";
         preview.src = "";
         previewWrap.hidden = true;
+        confirmBtn.disabled = true;
       }
     };
     const onConfirm = () => {
@@ -383,6 +388,7 @@ const requestEquipmentReturn = async (bookingId, options = {}) => {
   if (!silent) alert(`${t("equipmentReturnConfirmSent")} | ${t("equipmentReturnRequested")}`);
   safeNamedCallApi("renderProfilePage");
   safeNamedCallApi("renderEquipmentCatalog");
+  safeNamedCallApi("renderSelectedEquipmentList");
   safeNamedCallApi("renderAdminEquipmentBorrowSummary");
   return { ok: true };
 };
@@ -445,6 +451,7 @@ const requestMultipleEquipmentReturns = async (bookingIds, options = {}) => {
   alert(`${t("equipmentReturnConfirmSent")} | ${t("equipmentReturnRequested")}`);
   safeNamedCallApi("renderProfilePage");
   safeNamedCallApi("renderEquipmentCatalog");
+  safeNamedCallApi("renderSelectedEquipmentList");
   safeNamedCallApi("renderAdminEquipmentBorrowSummary");
 };
 
@@ -468,6 +475,9 @@ const syncEquipmentReturns = async () => {
     });
     if (changed) save(storageKeys.equipmentBookings, list);
     if (changed) safeNamedCallApi("renderAdminEquipmentBorrowSummary");
+    if (changed) safeNamedCallApi("renderEquipmentCatalog");
+    if (changed) safeNamedCallApi("renderSelectedEquipmentList");
+    if (changed) safeNamedCallApi("renderProfilePage");
   } catch {
     // API may be unavailable on static host.
   }

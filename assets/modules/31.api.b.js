@@ -472,7 +472,19 @@ const renderAdminEquipmentBorrowSummary = () => {
 const renderAdminUsers = () => {
   const target = byId("adminUserList");
   if (!target) return;
-  const users = load(storageKeys.users, []);
+  const search = String(byId("adminUserSearch")?.value || "").trim().toLowerCase();
+  const users = load(storageKeys.users, []).filter((u) => {
+    if (!search) return true;
+    return [
+      u.name,
+      u.username,
+      u.email,
+      u.studentId,
+      u.phone,
+    ]
+      .map((value) => String(value || "").toLowerCase())
+      .some((value) => value.includes(search));
+  });
   const canVerify = hasAdminCapability("user_verify_manage");
   const canSuspend = hasAdminCapability("user_suspend_manage");
   const canView = hasAdminCapability("user_view");
@@ -508,6 +520,15 @@ const renderAdminUsers = () => {
     })
     .join("")
     : `<p class="muted">${t("recentEmpty")}</p>`;
+};
+
+const setupAdminUserSearch = () => {
+  const input = byId("adminUserSearch");
+  if (!input || input.dataset.bound === "1") return;
+  input.dataset.bound = "1";
+  input.addEventListener("input", () => {
+    renderAdminUsers();
+  });
 };
 let selectedAdminUserProfileKey = "";
 let selectedAdminQuotaUserIndex = -1;
@@ -804,6 +825,7 @@ Object.assign(globalThis, {
   renderBroadcastRecipientList,
   renderAdminEquipmentBorrowSummary,
   renderAdminUsers,
+  setupAdminUserSearch,
   setupAdminQuotaModal,
   renderAdminUserProfilePanel,
   renderAdminAnnouncements,

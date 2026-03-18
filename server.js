@@ -432,6 +432,19 @@ const attachmentFromDataUrl = (dataUrl, fallbackName = 'proof.jpg') => {
   };
 };
 
+const attachmentFromImageSource = (imageSource, fallbackName = 'proof.jpg') => {
+  const dataUrlAttachment = attachmentFromDataUrl(imageSource, fallbackName);
+  if (dataUrlAttachment) return dataUrlAttachment;
+  const raw = String(imageSource || '').trim();
+  if (!raw.startsWith('/uploads/')) return null;
+  const absolute = path.join(uploadsDir, raw.replace(/^\/uploads\//, ''));
+  if (!fs.existsSync(absolute)) return null;
+  return {
+    filename: path.basename(absolute) || fallbackName,
+    path: absolute,
+  };
+};
+
 const ensureApprovalsStore = () => {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
   if (!fs.existsSync(approvalsPath)) {
@@ -939,7 +952,7 @@ app.post('/api/send-equipment-return-email', async (req, res) => {
       </div>
     `;
 
-    const proofAttachment = attachmentFromDataUrl(returnProofImage, `return-proof-${bookingId}.jpg`);
+    const proofAttachment = attachmentFromImageSource(returnProofImage, `return-proof-${bookingId}.jpg`);
     const info = await sendMailUtf8({
       from: process.env.MAIL_FROM,
       to: responsibleEmail,
@@ -1037,7 +1050,7 @@ app.post('/api/send-equipment-return-batch-email', async (req, res) => {
       </div>
     `;
 
-    const proofAttachment = attachmentFromDataUrl(returnProofImage, `return-proof-batch-${Date.now()}.jpg`);
+    const proofAttachment = attachmentFromImageSource(returnProofImage, `return-proof-batch-${Date.now()}.jpg`);
     const info = await sendMailUtf8({
       from: process.env.MAIL_FROM,
       to: responsibleEmail,

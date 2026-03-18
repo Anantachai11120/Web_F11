@@ -823,6 +823,37 @@ const performLogout = ({ redirect = true } = {}) => {
   }
 };
 
+let hiddenSessionLogoutTimer = null;
+
+const clearHiddenSessionLogoutTimer = () => {
+  if (!hiddenSessionLogoutTimer) return;
+  clearTimeout(hiddenSessionLogoutTimer);
+  hiddenSessionLogoutTimer = null;
+};
+
+const setupSessionIdleLogout = () => {
+  if (document.body?.dataset.idleLogoutBound === "1") return;
+  if (document.body) document.body.dataset.idleLogoutBound = "1";
+  const timeoutMs = 5 * 60 * 1000;
+  const scheduleIfHidden = () => {
+    clearHiddenSessionLogoutTimer();
+    if (!isLoggedInSession()) return;
+    if (document.visibilityState !== "hidden") return;
+    hiddenSessionLogoutTimer = setTimeout(() => {
+      performLogout({ redirect: false });
+    }, timeoutMs);
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      scheduleIfHidden();
+      return;
+    }
+    clearHiddenSessionLogoutTimer();
+    if (!isLoggedInSession()) ensureAdminAccess();
+  });
+  window.addEventListener("focus", clearHiddenSessionLogoutTimer);
+};
+
 const updateNavAuthState = () => {
   const isLoggedIn = isLoggedInSession();
   const authLinks = Array.from(document.querySelectorAll('.nav a[data-i18n="navLogin"]'));
